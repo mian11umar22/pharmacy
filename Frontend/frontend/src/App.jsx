@@ -8,6 +8,7 @@ import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import OrderSuccess from './pages/OrderSuccess'
+import ScrollToTop from './components/ScrollToTop'
 
 // Placeholder pages for now
 const Login = () => <div className="p-8">Login Page</div>
@@ -18,6 +19,7 @@ function App() {
     <CartProvider>
       <Toaster />
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />

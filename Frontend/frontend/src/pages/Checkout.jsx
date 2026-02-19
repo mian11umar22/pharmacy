@@ -1,30 +1,71 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronRight, Banknote, ArrowLeft } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useCart } from '../context/CartContext'
 import toast from 'react-hot-toast'
 
 const DELIVERY_FEE = 150
 const FREE_DELIVERY_THRESHOLD = 2000
 
+// ── Zod Validation Schema ──────────────────────────────
+const checkoutSchema = z.object({
+    fullName: z
+        .string()
+        .min(1, 'Full name is required')
+        .min(3, 'Name must be at least 3 characters')
+        .max(50, 'Name must be under 50 characters')
+        .regex(/^[a-zA-Z\s.'-]+$/, 'Name can only contain letters, spaces, dots, and hyphens'),
+
+    email: z
+        .string()
+        .min(1, 'Email is required')
+        .email('Please enter a valid email address'),
+
+    phone: z
+        .string()
+        .min(1, 'Phone number is required')
+        .regex(/^03\d{2}-?\d{7}$/, 'Enter valid Pakistani number (03XX-XXXXXXX)'),
+
+    address: z
+        .string()
+        .min(1, 'Address is required')
+        .min(10, 'Please enter a complete address (min 10 characters)')
+        .max(200, 'Address is too long'),
+
+    notes: z
+        .string()
+        .max(200, 'Notes must be under 200 characters')
+        .optional()
+        .or(z.literal('')),
+})
+// ────────────────────────────────────────────────────────
+
 const Checkout = () => {
     const navigate = useNavigate()
     const { cartItems, getCartTotal, clearCart } = useCart()
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const subtotal = getCartTotal()
     const delivery = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE
     const total = subtotal + delivery
 
-    const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phone: '',
-        address: '',
-        notes: '',
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm({
+        resolver: zodResolver(checkoutSchema),
+        defaultValues: {
+            fullName: '',
+            email: '',
+            phone: '',
+            address: '',
+            notes: '',
+        },
     })
-
-    const [errors, setErrors] = useState({})
-    const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Redirect to cart if empty
     if (cartItems.length === 0) {
@@ -40,56 +81,7 @@ const Checkout = () => {
         )
     }
 
-    const handleChange = (e) => {
-        const { name, value } = e.target
-        setFormData((prev) => ({ ...prev, [name]: value }))
-        // Clear error when user types
-        if (errors[name]) {
-            setErrors((prev) => ({ ...prev, [name]: '' }))
-        }
-    }
-
-    const validate = () => {
-        const newErrors = {}
-
-        if (!formData.fullName.trim() || formData.fullName.trim().length < 3) {
-            newErrors.fullName = 'Please enter your full name (min 3 characters)'
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!formData.email.trim()) {
-            newErrors.email = 'Email is required'
-        } else if (!emailRegex.test(formData.email.trim())) {
-            newErrors.email = 'Please enter a valid email address'
-        }
-
-        const phoneRegex = /^03\d{2}-?\d{7}$/
-        if (!formData.phone.trim()) {
-            newErrors.phone = 'Phone number is required'
-        } else if (!phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
-            newErrors.phone = 'Enter valid Pakistani number (03XX-XXXXXXX)'
-        }
-
-        if (!formData.address.trim() || formData.address.trim().length < 10) {
-            newErrors.address = 'Please enter a complete address (min 10 characters)'
-        }
-
-        setErrors(newErrors)
-        return Object.keys(newErrors).length === 0
-    }
-
-
-    const handlePlaceOrder = async (e) => {
-        e.preventDefault()
-
-        if (!validate()) {
-            toast.error('Please fill in all required fields', {
-                position: 'bottom-center',
-                style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
-            })
-            return
-        }
-
+    const onSubmit = async (data) => {
         setIsSubmitting(true)
 
         // Simulate order placement (replace with API call later)
@@ -105,7 +97,7 @@ const Checkout = () => {
             subtotal,
             delivery,
             total,
-            customer: formData,
+            customer: data,
             paymentMethod: 'COD',
             date: new Date().toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' }),
         }
@@ -117,6 +109,17 @@ const Checkout = () => {
         clearCart()
         navigate('/order-success')
     }
+
+    const onError = () => {
+        toast.error('Please fill in all required fields correctly', {
+            position: 'bottom-center',
+            style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
+        })
+    }
+
+    // Helper for input class
+    const inputClass = (fieldName) =>
+        `w-full px-4 py-2.5 rounded-lg border ${errors[fieldName] ? 'border-danger' : 'border-border'} focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background text-sm`
 
     return (
         <div className="bg-background min-h-screen">
@@ -141,7 +144,7 @@ const Checkout = () => {
                 </button>
             </div>
 
-            <form onSubmit={handlePlaceOrder} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+            <form onSubmit={handleSubmit(onSubmit, onError)} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
 
                 <h1 className="text-2xl md:text-3xl font-bold text-secondary mb-6">Checkout</h1>
 
@@ -162,13 +165,11 @@ const Checkout = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        name="fullName"
-                                        value={formData.fullName}
-                                        onChange={handleChange}
                                         placeholder="Muhammad Ali"
-                                        className={`w-full px-4 py-2.5 rounded-lg border ${errors.fullName ? 'border-danger' : 'border-border'} focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background text-sm`}
+                                        {...register('fullName')}
+                                        className={inputClass('fullName')}
                                     />
-                                    {errors.fullName && <p className="text-danger text-xs mt-1">{errors.fullName}</p>}
+                                    {errors.fullName && <p className="text-danger text-xs mt-1">{errors.fullName.message}</p>}
                                 </div>
 
                                 {/* Email */}
@@ -178,13 +179,11 @@ const Checkout = () => {
                                     </label>
                                     <input
                                         type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
                                         placeholder="ali@example.com"
-                                        className={`w-full px-4 py-2.5 rounded-lg border ${errors.email ? 'border-danger' : 'border-border'} focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background text-sm`}
+                                        {...register('email')}
+                                        className={inputClass('email')}
                                     />
-                                    {errors.email && <p className="text-danger text-xs mt-1">{errors.email}</p>}
+                                    {errors.email && <p className="text-danger text-xs mt-1">{errors.email.message}</p>}
                                 </div>
 
                                 {/* Phone */}
@@ -194,13 +193,11 @@ const Checkout = () => {
                                     </label>
                                     <input
                                         type="tel"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
                                         placeholder="03XX-XXXXXXX"
-                                        className={`w-full px-4 py-2.5 rounded-lg border ${errors.phone ? 'border-danger' : 'border-border'} focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background text-sm`}
+                                        {...register('phone')}
+                                        className={inputClass('phone')}
                                     />
-                                    {errors.phone && <p className="text-danger text-xs mt-1">{errors.phone}</p>}
+                                    {errors.phone && <p className="text-danger text-xs mt-1">{errors.phone.message}</p>}
                                 </div>
 
                                 {/* Address */}
@@ -209,14 +206,12 @@ const Checkout = () => {
                                         Delivery Address <span className="text-danger">*</span>
                                     </label>
                                     <textarea
-                                        name="address"
-                                        value={formData.address}
-                                        onChange={handleChange}
-                                        placeholder="House # 123, Street 5, Block A, DHA Phase 6"
+                                        placeholder="House # 123, Street 5, Block A, DHA Phase 6, Lahore"
                                         rows="2"
-                                        className={`w-full px-4 py-2.5 rounded-lg border ${errors.address ? 'border-danger' : 'border-border'} focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background text-sm resize-none`}
+                                        {...register('address')}
+                                        className={`${inputClass('address')} resize-none`}
                                     />
-                                    {errors.address && <p className="text-danger text-xs mt-1">{errors.address}</p>}
+                                    {errors.address && <p className="text-danger text-xs mt-1">{errors.address.message}</p>}
                                 </div>
 
                                 {/* Notes */}
@@ -225,13 +220,12 @@ const Checkout = () => {
                                         Delivery Notes <span className="text-text-secondary font-normal">(optional)</span>
                                     </label>
                                     <textarea
-                                        name="notes"
-                                        value={formData.notes}
-                                        onChange={handleChange}
                                         placeholder="Any special instructions for delivery..."
                                         rows="2"
-                                        className="w-full px-4 py-2.5 rounded-lg border border-border focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background text-sm resize-none"
+                                        {...register('notes')}
+                                        className={`${inputClass('notes')} resize-none`}
                                     />
+                                    {errors.notes && <p className="text-danger text-xs mt-1">{errors.notes.message}</p>}
                                 </div>
                             </div>
                         </div>
@@ -338,7 +332,7 @@ const Checkout = () => {
                     </div>
                     <button
                         type="button"
-                        onClick={handlePlaceOrder}
+                        onClick={handleSubmit(onSubmit, onError)}
                         disabled={isSubmitting}
                         className="bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
