@@ -14,29 +14,38 @@ const FREE_DELIVERY_THRESHOLD = 2000
 const checkoutSchema = z.object({
     fullName: z
         .string()
+        .trim()
         .min(1, 'Full name is required')
         .min(3, 'Name must be at least 3 characters')
         .max(50, 'Name must be under 50 characters')
-        .regex(/^[a-zA-Z\s.'-]+$/, 'Name can only contain letters, spaces, dots, and hyphens'),
+        .regex(/^[a-zA-Z\s.'-]+$/, 'Name can only contain letters, spaces, dots, and hyphens')
+        .regex(/^(?!.*\s{2})/, 'Name cannot have consecutive spaces')
+        .regex(/^[a-zA-Z]/, 'Name must start with a letter'),
 
     email: z
         .string()
+        .trim()
+        .toLowerCase()
         .min(1, 'Email is required')
         .email('Please enter a valid email address'),
 
     phone: z
         .string()
+        .trim()
         .min(1, 'Phone number is required')
-        .regex(/^03\d{2}-?\d{7}$/, 'Enter valid Pakistani number (03XX-XXXXXXX)'),
+        .regex(/^\d{11}$/, 'Phone number must be exactly 11 digits (numbers only)'),
 
     address: z
         .string()
+        .trim()
         .min(1, 'Address is required')
         .min(10, 'Please enter a complete address (min 10 characters)')
-        .max(200, 'Address is too long'),
+        .max(200, 'Address is too long')
+        .regex(/[a-zA-Z]/, 'Address must contain at least some letters'),
 
     notes: z
         .string()
+        .trim()
         .max(200, 'Notes must be under 200 characters')
         .optional()
         .or(z.literal('')),
@@ -167,6 +176,7 @@ const Checkout = () => {
                                         type="text"
                                         placeholder="Muhammad Ali"
                                         {...register('fullName')}
+                                        onInput={(e) => e.target.value = e.target.value.replace(/[0-9]/g, '')}
                                         className={inputClass('fullName')}
                                     />
                                     {errors.fullName && <p className="text-danger text-xs mt-1">{errors.fullName.message}</p>}
@@ -193,8 +203,10 @@ const Checkout = () => {
                                     </label>
                                     <input
                                         type="tel"
-                                        placeholder="03XX-XXXXXXX"
+                                        placeholder="03XXXXXXXXX"
+                                        maxLength={11}
                                         {...register('phone')}
+                                        onInput={(e) => e.target.value = e.target.value.replace(/[^0-9]/g, '')}
                                         className={inputClass('phone')}
                                     />
                                     {errors.phone && <p className="text-danger text-xs mt-1">{errors.phone.message}</p>}
