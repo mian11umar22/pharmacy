@@ -8,7 +8,15 @@ export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState(() => {
         try {
             const storedCart = localStorage.getItem('cart')
-            return storedCart ? JSON.parse(storedCart) : []
+            if (storedCart) {
+                const parsed = JSON.parse(storedCart)
+                // Sanitize: ensure all items have valid quantity
+                return parsed.map(item => ({
+                    ...item,
+                    quantity: Number(item.quantity) || 1
+                }))
+            }
+            return []
         } catch (error) {
             console.error('Failed to load cart from localStorage', error)
             return []

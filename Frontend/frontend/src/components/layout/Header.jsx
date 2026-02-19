@@ -1,9 +1,23 @@
-import { Link } from 'react-router-dom'
-import { Search, ShoppingCart, User, Menu } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Search, ShoppingCart, User, Menu, X } from 'lucide-react'
 import { useState } from 'react'
+import { useCart } from '../../context/CartContext'
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
+    const navigate = useNavigate()
+    const { cartItems, getCartCount } = useCart()
+
+    const cartCount = getCartCount()
+
+    const handleSearch = (e) => {
+        e.preventDefault()
+        if (searchQuery.trim()) {
+            navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
+            setSearchQuery('')
+        }
+    }
 
     return (
         <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -24,14 +38,18 @@ const Header = () => {
                     </Link>
 
                     {/* Desktop Search */}
-                    <div className="hidden md:flex flex-1 max-w-lg mx-8 relative">
+                    <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-lg mx-8 relative">
                         <input
                             type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search for medicines, health products..."
                             className="w-full pl-4 pr-10 py-2 rounded-lg border border-border focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background"
                         />
-                        <Search className="absolute right-3 top-2.5 text-text-secondary w-5 h-5 cursor-pointer" />
-                    </div>
+                        <button type="submit" className="absolute right-3 top-2.5 text-text-secondary hover:text-primary transition-colors">
+                            <Search className="w-5 h-5" />
+                        </button>
+                    </form>
 
                     {/* Icons Navigation */}
                     <div className="flex items-center gap-6">
@@ -48,7 +66,7 @@ const Header = () => {
                         <Link to="/cart" className="flex flex-col items-center text-text-secondary hover:text-primary transition relative">
                             <ShoppingCart className="w-6 h-6" />
                             <span className="absolute -top-1 -right-2 bg-accent text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                                0
+                                {cartCount}
                             </span>
                             <span className="text-xs mt-0.5 hidden md:block">Cart</span>
                         </Link>
@@ -57,62 +75,63 @@ const Header = () => {
                             className="md:hidden text-secondary"
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                         >
-                            <Menu className="w-6 h-6" />
+                            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
                     </div>
                 </div>
 
-                {/* Mobile Search Bar (Visible only on mobile) */}
-                <div className="md:hidden pb-4">
+                {/* Mobile Search Bar */}
+                <form onSubmit={handleSearch} className="md:hidden pb-3">
                     <div className="relative">
                         <input
                             type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search medicines..."
-                            className="w-full pl-4 pr-10 py-2 rounded-lg border border-border bg-background focus:outline-none focus:border-primary"
+                            className="w-full pl-4 pr-10 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:border-primary"
                         />
-                        <Search className="absolute right-3 top-2.5 text-text-secondary w-5 h-5" />
+                        <button type="submit" className="absolute right-3 top-3 text-text-secondary">
+                            <Search className="w-5 h-5" />
+                        </button>
                     </div>
-                </div>
+                </form>
             </div>
 
-
             {/* Mobile Menu Dropdown */}
-            {
-                isMenuOpen && (
-                    <div className="md:hidden bg-white border-t border-border animate-fade-in absolute w-full left-0 shadow-lg">
-                        <div className="px-4 pt-2 pb-6 space-y-4">
-                            <Link
-                                to="/products"
-                                className="block px-3 py-2 rounded-md text-base font-medium text-secondary hover:text-primary hover:bg-primary-light/50"
-                                onClick={() => setIsMenuOpen(false)}
-                            >
-                                Shop Medicines
-                            </Link>
-                            <Link
-                                to="/login"
-                                className="block px-3 py-2 rounded-md text-base font-medium text-secondary hover:text-primary hover:bg-primary-light/50"
-                                onClick={() => setIsMenuOpen(false)}
-                            >
-                                Login / Register
-                            </Link>
-                            <Link
-                                to="/cart"
-                                className="block px-3 py-2 rounded-md text-base font-medium text-secondary hover:text-primary hover:bg-primary-light/50"
-                                onClick={() => setIsMenuOpen(false)}
-                            >
-                                My Cart
-                            </Link>
-                            <div className="border-t border-border pt-4">
-                                <div className="flex items-center gap-3 text-sm text-text-secondary px-3">
-                                    <span className="font-semibold">Need Help?</span>
-                                    <a href="tel:03001234567" className="text-primary">0300-1234567</a>
-                                </div>
+            {isMenuOpen && (
+                <div className="md:hidden bg-white border-t border-border animate-fade-in shadow-lg">
+                    <div className="px-4 pt-2 pb-6 space-y-1">
+                        <Link
+                            to="/products"
+                            className="block px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            🛒 Shop Medicines
+                        </Link>
+                        <Link
+                            to="/login"
+                            className="block px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            👤 Login / Register
+                        </Link>
+                        <Link
+                            to="/cart"
+                            className="block px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            🛍️ My Cart ({cartCount})
+                        </Link>
+                        <div className="border-t border-border pt-3 mt-3">
+                            <div className="flex items-center gap-3 text-sm text-text-secondary px-3">
+                                <span className="font-semibold">Need Help?</span>
+                                <a href="tel:03001234567" className="text-primary font-medium">0300-1234567</a>
                             </div>
                         </div>
                     </div>
-                )
-            }
-        </header >
+                </div>
+            )}
+        </header>
     )
 }
 
