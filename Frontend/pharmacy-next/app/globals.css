@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-primary: #0D9E71;
+  --color-primary-dark: #087A57;
+  --color-primary-light: #E8F5E9;
+
+  --color-secondary: #1B3A4B;
+  --color-accent: #FF6B35;
+
+  --color-background: #F8FAF9;
+  --color-card: #FFFFFF;
+
+  --color-text-primary: #1A1A2E;
+  --color-text-secondary: #6B7280;
+
+  --color-border: #E5E7EB;
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+  --color-warning: #F59E0B;
+
+  /* Fonts */
+  --font-sans: Inter, system-ui, sans-serif;
+
+  /* Radius */
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Animations */
+  --animate-fade-in: fadeIn 0.5s ease-out forwards;
+  --animate-fade-up: fadeInUp 0.6s ease-out forwards;
+  --animate-scale-in: scaleIn 0.4s ease-out forwards;
+  --animate-slide-in-right: slideInRight 0.3s ease-out forwards;
+  --animate-shimmer: shimmer 1.5s infinite linear;
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Base Styles */
+@layer base {
+  body {
+    @apply bg-background text-text-primary font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold text-secondary;
+  }
+}
+
+/* Component Styles */
+@layer components {
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer;
+  }
+
+  .btn-outline {
+    @apply border border-primary text-primary hover:bg-primary-light font-semibold py-2 px-4 rounded-lg transition-all duration-200 cursor-pointer;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-card p-4 transition-all duration-300 hover:shadow-hover hover:-translate-y-1;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+}
+
+/* Custom Utilities */
+.skeleton {
+  @apply bg-gray-200 animate-pulse rounded;
+}
