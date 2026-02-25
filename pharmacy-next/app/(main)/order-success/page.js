@@ -122,10 +122,25 @@ export default function OrderSuccessPage() {
                 </div>
 
                 {/* Info Note */}
-                <div className="bg-primary/5 rounded-xl p-4 mb-6 animate-fade-up" style={{ animationDelay: '300ms' }}>
+                <div className="bg-primary/5 rounded-xl p-4 mb-4 animate-fade-up" style={{ animationDelay: '300ms' }}>
                     <p className="text-sm text-primary text-center">
                         📞 We'll call you on <strong>{order.customer.phone}</strong> to confirm your order
                     </p>
+                </div>
+
+                {/* Create Account CTA for Guest Users */}
+                <div className="bg-white rounded-xl border-2 border-dashed border-primary/30 p-5 mb-6 animate-fade-up text-center" style={{ animationDelay: '350ms' }}>
+                    <div className="text-2xl mb-2">🎁</div>
+                    <h3 className="font-bold text-secondary text-base mb-1">Create an Account</h3>
+                    <p className="text-xs text-text-secondary mb-3">
+                        Track this order, save addresses & view order history
+                    </p>
+                    <Link
+                        href="/register"
+                        className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold py-2.5 px-6 rounded-xl transition-all active:scale-[0.98]"
+                    >
+                        Sign Up — It's Free
+                    </Link>
                 </div>
 
                 {/* Actions */}

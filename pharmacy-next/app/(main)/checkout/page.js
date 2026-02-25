@@ -11,7 +11,6 @@ import { useCart } from '@/context/CartContext'
 import toast from 'react-hot-toast'
 
 const DELIVERY_FEE = 150
-const FREE_DELIVERY_THRESHOLD = 2000
 
 // ── Zod Validation Schema ──────────────────────────────
 const checkoutSchema = z.object({
@@ -66,7 +65,7 @@ export default function CheckoutPage() {
     }, [])
 
     const subtotal = getCartTotal()
-    const delivery = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : (cartItems.length > 0 ? DELIVERY_FEE : 0)
+    const delivery = cartItems.length > 0 ? DELIVERY_FEE : 0
     const total = subtotal + delivery
 
     const {
@@ -305,11 +304,7 @@ export default function CheckoutPage() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-text-secondary">Delivery</span>
-                                    {delivery === 0 ? (
-                                        <span className="font-medium text-success">FREE</span>
-                                    ) : (
-                                        <span className="font-medium text-secondary">Rs. {delivery}</span>
-                                    )}
+                                    <span className="font-medium text-secondary">Rs. {delivery}</span>
                                 </div>
                                 <div className="border-t border-border pt-3 mt-3">
                                     <div className="flex justify-between">

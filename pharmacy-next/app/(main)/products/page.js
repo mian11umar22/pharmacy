@@ -3,9 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Filter, ArrowUpDown, ChevronRight, X } from 'lucide-react'
+import { ArrowUpDown, ChevronRight, X } from 'lucide-react'
 import ProductCard from '@/components/ui/ProductCard'
-import ProductFilters from '@/components/products/ProductFilters'
 import { products as allProducts, categories } from '@/services/mockData'
 
 const PRODUCTS_PER_PAGE = 12
@@ -17,9 +16,8 @@ const ProductsContent = () => {
 
     // Filters
     const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All')
-    const [priceRange, setPriceRange] = useState({ min: 0, max: 5000 })
     const [sortBy, setSortBy] = useState('popular')
-    const [showMobileFilters, setShowMobileFilters] = useState(false)
+    const [showSortModal, setShowSortModal] = useState(false)
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
 
     // Load More
@@ -67,10 +65,7 @@ const ProductsContent = () => {
             )
         }
 
-        // Price Filter
-        temp = temp.filter(
-            (p) => p.price >= priceRange.min && p.price <= priceRange.max
-        )
+
 
         // Sorting
         if (sortBy === 'price-low') {
@@ -85,14 +80,13 @@ const ProductsContent = () => {
 
         setFilteredProducts(temp)
         setVisibleCount(PRODUCTS_PER_PAGE) // Reset on filter change
-    }, [selectedCategory, priceRange, sortBy, searchQuery])
+    }, [selectedCategory, sortBy, searchQuery])
 
     const visibleProducts = filteredProducts.slice(0, visibleCount)
     const hasMore = visibleCount < filteredProducts.length
 
     const clearAllFilters = () => {
         setSelectedCategory('All')
-        setPriceRange({ min: 0, max: 5000 })
         setSortBy('popular')
         setSearchQuery('')
     }
@@ -140,6 +134,16 @@ const ProductsContent = () => {
                 </div>
             </div>
 
+            {/* Mobile Sort Top Bar */}
+            <div className="md:hidden flex gap-3 px-4 py-3 bg-white border-b border-border">
+                <button
+                    onClick={() => setShowSortModal(true)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary text-white rounded-full text-sm font-semibold shadow-sm active:scale-95 transition-transform"
+                >
+                    <ArrowUpDown className="w-4 h-4" /> Sort
+                </button>
+            </div>
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
                 {/* Header Bar */}
@@ -181,28 +185,6 @@ const ProductsContent = () => {
                 )}
 
                 <div className="flex gap-8">
-                    {/* Desktop Sidebar */}
-                    <aside className="hidden md:block w-60 flex-shrink-0">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-border sticky top-24">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="font-bold text-lg text-secondary">Filters</h2>
-                                {(selectedCategory !== 'All' || priceRange.max < 5000) && (
-                                    <button
-                                        onClick={clearAllFilters}
-                                        className="text-xs text-accent hover:underline"
-                                    >
-                                        Clear all
-                                    </button>
-                                )}
-                            </div>
-                            <ProductFilters
-                                selectedCategory={selectedCategory}
-                                setSelectedCategory={setSelectedCategory}
-                                priceRange={priceRange}
-                                setPriceRange={setPriceRange}
-                            />
-                        </div>
-                    </aside>
 
                     {/* Products Grid */}
                     <div className="flex-1">
@@ -250,77 +232,63 @@ const ProductsContent = () => {
                 </div>
             </div>
 
-            {/* Mobile Sticky Bottom Bar */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border shadow-lg z-40 px-4 py-3 flex gap-3">
-                <button
-                    onClick={() => setShowMobileFilters(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-100 rounded-lg text-sm font-medium text-secondary"
-                >
-                    <Filter className="w-4 h-4" /> Filters
-                </button>
-                <div className="flex-1">
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="w-full py-2.5 px-3 bg-gray-100 rounded-lg text-sm font-medium text-secondary appearance-none text-center"
-                    >
-                        <option value="popular">↕ Popular</option>
-                        <option value="newest">↕ Newest</option>
-                        <option value="price-low">↕ Price ↑</option>
-                        <option value="price-high">↕ Price ↓</option>
-                        <option value="discount">↕ Deals</option>
-                    </select>
-                </div>
-            </div>
 
-            {/* Mobile Filter Slide-up Panel */}
-            {showMobileFilters && (
+
+
+
+            {/* Mobile Sort Slide-up Modal */}
+            {showSortModal && (
                 <div className="md:hidden fixed inset-0 z-50">
                     {/* Overlay */}
                     <div
                         className="absolute inset-0 bg-black/40"
-                        onClick={() => setShowMobileFilters(false)}
+                        onClick={() => setShowSortModal(false)}
                     ></div>
 
                     {/* Panel */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto animate-fade-up">
+                    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 animate-fade-up">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-lg font-bold text-secondary">Filters</h2>
+                            <h2 className="text-lg font-bold text-secondary">Sort By</h2>
                             <button
-                                onClick={() => setShowMobileFilters(false)}
+                                onClick={() => setShowSortModal(false)}
                                 className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <ProductFilters
-                            selectedCategory={selectedCategory}
-                            setSelectedCategory={setSelectedCategory}
-                            priceRange={priceRange}
-                            setPriceRange={setPriceRange}
-                        />
-
-                        <div className="mt-6 flex gap-3">
-                            <button
-                                onClick={clearAllFilters}
-                                className="flex-1 py-3 border border-border rounded-xl text-sm font-medium text-text-secondary"
-                            >
-                                Clear All
-                            </button>
-                            <button
-                                onClick={() => setShowMobileFilters(false)}
-                                className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold"
-                            >
-                                Apply Filters
-                            </button>
+                        <div className="flex flex-col gap-1">
+                            {[
+                                { value: 'popular', label: 'Popular' },
+                                { value: 'newest', label: 'Newest' },
+                                { value: 'price-low', label: 'Price: Low → High' },
+                                { value: 'price-high', label: 'Price: High → Low' },
+                                { value: 'discount', label: 'Best Deals' },
+                            ].map((option) => (
+                                <button
+                                    key={option.value}
+                                    onClick={() => {
+                                        setSortBy(option.value)
+                                        setShowSortModal(false)
+                                    }}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${sortBy === option.value
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-secondary hover:bg-gray-50'
+                                        }`}
+                                >
+                                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${sortBy === option.value ? 'border-primary' : 'border-gray-300'
+                                        }`}>
+                                        {sortBy === option.value && (
+                                            <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>
+                                        )}
+                                    </span>
+                                    {option.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
             )}
-
-            {/* Bottom spacer for mobile sticky bar */}
-            <div className="md:hidden h-16"></div>
         </div>
     )
 }
