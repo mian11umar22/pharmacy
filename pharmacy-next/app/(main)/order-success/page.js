@@ -9,6 +9,7 @@ export default function OrderSuccessPage() {
     const [isHydrated, setIsHydrated] = useState(false)
 
     useEffect(() => {
+        window.scrollTo(0, 0)
         setIsHydrated(true)
         const data = sessionStorage.getItem('lastOrder')
         if (data) {
