@@ -103,7 +103,7 @@ export default function OrderSuccessPage() {
                         </div>
                         <div className="flex justify-between">
                             <span className="text-text-secondary">Delivery</span>
-                            <span className="text-secondary">{order.delivery === 0 ? 'FREE' : `Rs. ${order.delivery}`}</span>
+                            <span className="text-secondary">Rs. {order.delivery}</span>
                         </div>
                         <div className="flex justify-between pt-2 border-t border-border">
                             <span className="font-bold text-secondary">Total</span>

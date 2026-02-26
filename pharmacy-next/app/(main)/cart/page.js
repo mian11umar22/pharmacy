@@ -7,14 +7,13 @@ import { useCart } from '@/context/CartContext'
 import toast from 'react-hot-toast'
 
 const DELIVERY_FEE = 150
-const FREE_DELIVERY_THRESHOLD = 2000
 
 export default function CartPage() {
     const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart()
     const router = useRouter()
 
     const subtotal = getCartTotal()
-    const delivery = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : (cartItems.length > 0 ? DELIVERY_FEE : 0)
+    const delivery = cartItems.length > 0 ? DELIVERY_FEE : 0
     const total = subtotal + delivery
 
     const handleRemove = (item) => {
@@ -188,11 +187,7 @@ export default function CartPage() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-text-secondary">Delivery</span>
-                                    {delivery === 0 ? (
-                                        <span className="font-medium text-success">FREE</span>
-                                    ) : (
-                                        <span className="font-medium text-secondary">Rs. {delivery}</span>
-                                    )}
+                                    <span className="font-medium text-secondary">Rs. {delivery}</span>
                                 </div>
 
                                 <div className="border-t border-border pt-3 mt-3">
@@ -203,28 +198,7 @@ export default function CartPage() {
                                 </div>
                             </div>
 
-                            {/* Free delivery indicator */}
-                            {subtotal < FREE_DELIVERY_THRESHOLD && (
-                                <div className="mt-4 bg-primary/5 rounded-lg p-3">
-                                    <p className="text-xs text-primary font-medium">
-                                        🚚 Add Rs. {FREE_DELIVERY_THRESHOLD - subtotal} more for <strong>FREE delivery!</strong>
-                                    </p>
-                                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                                        <div
-                                            className="bg-primary h-1.5 rounded-full transition-all"
-                                            style={{ width: `${Math.min((subtotal / FREE_DELIVERY_THRESHOLD) * 100, 100)}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            )}
 
-                            {subtotal >= FREE_DELIVERY_THRESHOLD && (
-                                <div className="mt-4 bg-success/10 rounded-lg p-3">
-                                    <p className="text-xs text-success font-medium">
-                                        ✅ You've got <strong>FREE delivery!</strong>
-                                    </p>
-                                </div>
-                            )}
 
                             {/* Checkout Button (Desktop) */}
                             <button
@@ -242,12 +216,12 @@ export default function CartPage() {
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border shadow-lg z-40 px-4 py-3">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-xs text-text-secondary">Total</p>
-                        <p className="text-xl font-bold text-primary">Rs. {total}</p>
+                        <p className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Total</p>
+                        <p className="text-xl font-black text-primary">Rs. {total}</p>
                     </div>
                     <button
                         onClick={() => router.push('/checkout')}
-                        className="bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-8 rounded-xl transition-all shadow-sm cursor-pointer"
+                        className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95"
                     >
                         Checkout →
                     </button>

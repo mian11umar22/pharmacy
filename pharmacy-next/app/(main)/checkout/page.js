@@ -342,21 +342,21 @@ export default function CheckoutPage() {
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border shadow-lg z-40 px-4 py-3">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-xs text-text-secondary">Total</p>
-                        <p className="text-xl font-bold text-primary">Rs. {total}</p>
+                        <p className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Total</p>
+                        <p className="text-xl font-black text-primary">Rs. {total}</p>
                     </div>
                     <button
                         type="button"
                         onClick={handleSubmit(onSubmit, onError)}
                         disabled={isSubmitting}
-                        className="bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-60"
                     >
                         {isSubmitting ? 'Placing...' : 'Place Order 💵'}
                     </button>
                 </div>
             </div>
 
-            {/* Bottom spacer */}
+            {/* Bottom spacer for mobile sticky bar */}
             <div className="lg:hidden h-20"></div>
         </div>
     )
