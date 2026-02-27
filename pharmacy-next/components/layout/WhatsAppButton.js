@@ -1,12 +1,19 @@
 "use client"
 
+import { usePathname } from 'next/navigation'
+
 const WhatsAppButton = () => {
+    const pathname = usePathname()
+
+    // On Cart/Checkout, MobileNav is hidden, so WhatsApp goes lower
+    const isActionBarPage = pathname === '/cart' || pathname === '/checkout'
+
     return (
         <a
             href="https://wa.me/923054964343"
             target="_blank"
             rel="noopener noreferrer"
-            className="fixed bottom-[50px] md:bottom-8 left-6 z-[9999] flex items-center bg-transparent md:bg-white md:p-2 md:pr-5 rounded-full md:shadow-2xl md:border md:border-border hover:translate-y-[-4px] transition-all group active:scale-95 animate-fade-in"
+            className={`fixed ${isActionBarPage ? 'bottom-[70px]' : 'bottom-[75px]'} md:bottom-8 left-6 z-[99] flex items-center bg-transparent md:bg-white md:p-2 md:pr-5 rounded-full md:shadow-2xl md:border md:border-border hover:translate-y-[-4px] transition-all group active:scale-95 animate-fade-in`}
         >
             <div className="w-14 h-14 md:w-10 md:h-10 bg-[#25D366] rounded-full flex items-center justify-center text-white shadow-xl md:shadow-lg group-hover:rotate-12 transition-transform">
                 <svg

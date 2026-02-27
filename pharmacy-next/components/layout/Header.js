@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search, ShoppingCart, User, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '../../context/CartContext'
+import CategoryBar from './CategoryBar'
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -106,6 +107,9 @@ const Header = () => {
                     </div>
                 </form>
             </div>
+
+            {/* Desktop Categories Bar */}
+            <CategoryBar />
 
             {/* Mobile Menu Dropdown */}
             {isMenuOpen && (

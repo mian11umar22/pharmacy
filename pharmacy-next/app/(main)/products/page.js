@@ -107,32 +107,7 @@ const ProductsContent = () => {
                 </div>
             </div>
 
-            {/* Mobile Category Pills */}
-            <div className="md:hidden bg-white border-b border-border overflow-x-auto">
-                <div className="flex gap-2 px-4 py-3 min-w-max">
-                    <button
-                        onClick={() => setSelectedCategory('All')}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === 'All'
-                            ? 'bg-primary text-white shadow-sm'
-                            : 'bg-gray-100 text-text-secondary hover:bg-gray-200'
-                            }`}
-                    >
-                        All
-                    </button>
-                    {categories.map((cat) => (
-                        <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat)}
-                            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
-                                ? 'bg-primary text-white shadow-sm'
-                                : 'bg-gray-100 text-text-secondary hover:bg-gray-200'
-                                }`}
-                        >
-                            {cat}
-                        </button>
-                    ))}
-                </div>
-            </div>
+            {/* Mobile category pills removed — users navigate via /categories page now */}
 
             {/* Mobile Sort Top Bar */}
             <div className="md:hidden flex gap-3 px-4 py-3 bg-white border-b border-border">

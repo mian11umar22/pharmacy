@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { Home, Grid, ShoppingCart, User, Search } from 'lucide-react'
+import { Home, LayoutGrid, ShoppingCart, User } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
 import { usePathname } from 'next/navigation'
 import { clsx } from 'clsx'
@@ -11,9 +11,14 @@ const MobileNav = () => {
     const pathname = usePathname()
     const cartCount = getCartCount()
 
+    // Hide on Cart and Checkout pages (they have their own sticky action bars)
+    if (pathname === '/cart' || pathname === '/checkout') {
+        return null
+    }
+
     const navItems = [
         { icon: Home, label: 'Home', href: '/' },
-        { icon: Grid, label: 'Shop', href: '/products' },
+        { icon: LayoutGrid, label: 'Categories', href: '/categories' },
         { icon: ShoppingCart, label: 'Cart', href: '/cart', count: cartCount },
         { icon: User, label: 'Account', href: '/login' },
     ]
@@ -26,11 +31,18 @@ const MobileNav = () => {
                     href={item.href}
                     className={clsx(
                         "flex flex-col items-center gap-1 transition-all",
-                        pathname === item.href ? "text-primary scale-110" : "text-text-secondary hover:text-primary"
+                        pathname === item.href || (item.href === '/categories' && pathname.startsWith('/categories'))
+                            ? "text-primary scale-110"
+                            : "text-text-secondary hover:text-primary"
                     )}
                 >
                     <div className="relative">
-                        <item.icon className={clsx("w-6 h-6", pathname === item.href ? "stroke-[2.5px]" : "stroke-2")} />
+                        <item.icon className={clsx(
+                            "w-6 h-6",
+                            pathname === item.href || (item.href === '/categories' && pathname.startsWith('/categories'))
+                                ? "stroke-[2.5px]"
+                                : "stroke-2"
+                        )} />
                         {item.count > 0 && (
                             <span className="absolute -top-1.5 -right-2 bg-accent text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
                                 {item.count}
