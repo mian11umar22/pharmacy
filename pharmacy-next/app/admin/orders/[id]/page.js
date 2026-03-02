@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState, useEffect } from 'react'
+import { use, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Phone, MapPin, CreditCard, Loader2 } from 'lucide-react'
 import Image from 'next/image'
@@ -21,7 +21,7 @@ export default function AdminOrderDetailPage({ params }) {
     const [isLoading, setIsLoading] = useState(true)
     const [isUpdating, setIsUpdating] = useState(false)
 
-    const fetchOrder = async () => {
+    const fetchOrder = useCallback(async () => {
         try {
             setIsLoading(true)
             const res = await fetch(`/api/orders/${id}`)
@@ -36,11 +36,11 @@ export default function AdminOrderDetailPage({ params }) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [id])
 
     useEffect(() => {
         fetchOrder()
-    }, [id])
+    }, [fetchOrder])
 
     const handleStatusChange = async (newStatus) => {
         try {
@@ -180,7 +180,7 @@ export default function AdminOrderDetailPage({ params }) {
                     {order.notes && (
                         <div className="bg-white rounded-xl border border-border p-5">
                             <h2 className="font-bold text-secondary text-sm mb-2">Order Notes</h2>
-                            <p className="text-sm text-text-secondary italic">"{order.notes}"</p>
+                            <p className="text-sm text-text-secondary italic">&quot;{order.notes}&quot;</p>
                         </div>
                     )}
                 </div>

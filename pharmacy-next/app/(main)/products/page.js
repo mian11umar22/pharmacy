@@ -191,7 +191,7 @@ const ProductsContent = () => {
 
                 {searchQuery && (
                     <div className="mb-4 flex items-center gap-2 text-sm bg-primary/5 text-primary px-4 py-2 rounded-lg">
-                        <span>Searching for: <strong>"{searchQuery}"</strong></span>
+                        <span>Searching for: <strong>&quot;{searchQuery}&quot;</strong></span>
                         <button onClick={() => updateURL({ search: null })} className="ml-auto hover:text-accent p-1">
                             <X className="w-4 h-4" />
                         </button>

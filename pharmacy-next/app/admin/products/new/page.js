@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Upload, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -31,7 +32,7 @@ export default function AddProductPage() {
         stock: '',
     })
 
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
             const res = await fetch('/api/categories')
             const data = await res.json()
@@ -39,9 +40,9 @@ export default function AddProductPage() {
         } catch (error) {
             toast.error('Failed to load categories')
         }
-    }
+    }, [])
 
-    const fetchProduct = async (id) => {
+    const fetchProduct = useCallback(async (id) => {
         try {
             setIsLoading(true)
             const res = await fetch(`/api/products/${id}`)
@@ -68,14 +69,14 @@ export default function AddProductPage() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [router])
 
     useEffect(() => {
         fetchCategories()
         if (editId) {
             fetchProduct(editId)
         }
-    }, [editId])
+    }, [editId, fetchCategories, fetchProduct])
 
     const update = (field, value) => {
         const newForm = { ...form, [field]: value }

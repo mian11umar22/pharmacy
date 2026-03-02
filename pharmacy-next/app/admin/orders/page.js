@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Search, ChevronRight, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -23,7 +23,7 @@ export default function AdminOrdersPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [totalOrders, setTotalOrders] = useState(0)
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             setIsLoading(true)
             const statusParam = activeFilter !== 'All' ? `&status=${activeFilter.toLowerCase()}` : ''
@@ -51,11 +51,11 @@ export default function AdminOrdersPage() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [activeFilter])
 
     useEffect(() => {
         fetchOrders()
-    }, [activeFilter])
+    }, [fetchOrders])
 
     const filtered = orders.filter((order) => {
         const matchesSearch = !searchQuery ||

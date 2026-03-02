@@ -140,7 +140,7 @@ export default function OrderSuccessPage() {
                         href="/register"
                         className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold py-2.5 px-6 rounded-xl transition-all active:scale-[0.98]"
                     >
-                        Sign Up — It's Free
+                        Sign Up — It&apos;s Free
                     </Link>
                 </div>
 
