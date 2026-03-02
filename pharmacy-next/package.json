@@ -16,10 +16,10 @@
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.575.0",
     "mongoose": "^9.2.3",
-    "next": "15.2.0",
+    "next": "15.1.9",
     "nodemailer": "^8.0.1",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
+    "react": "19.0.1",
+    "react-dom": "19.0.1",
     "react-hook-form": "^7.71.2",
     "react-hot-toast": "^2.6.0",
     "tailwind-merge": "^3.5.0",
@@ -29,7 +29,7 @@
     "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "15.2.0",
+    "eslint-config-next": "15.1.9",
     "tailwindcss": "^4"
   }
 }
