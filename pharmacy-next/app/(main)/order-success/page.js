@@ -24,7 +24,7 @@ export default function OrderSuccessPage() {
             <div className="min-h-[70vh] flex flex-col items-center justify-center bg-background px-4">
                 <div className="text-6xl mb-4">🤷</div>
                 <h2 className="text-2xl font-bold text-secondary mb-2">No order found</h2>
-                <p className="text-text-secondary mb-6">Looks like you haven't placed an order yet.</p>
+                <p className="text-text-secondary mb-6">Looks like you haven&apos;t placed an order yet.</p>
                 <Link href="/products" className="bg-primary text-white font-semibold py-3 px-8 rounded-xl hover:bg-primary-dark transition-all">
                     Browse Products →
                 </Link>
@@ -125,7 +125,7 @@ export default function OrderSuccessPage() {
                 {/* Info Note */}
                 <div className="bg-primary/5 rounded-xl p-4 mb-4 animate-fade-up" style={{ animationDelay: '300ms' }}>
                     <p className="text-sm text-primary text-center">
-                        📞 We'll call you on <strong>{order.customer.phone}</strong> to confirm your order
+                        📞 We&apos;ll call you on <strong>{order.customer.phone}</strong> to confirm your order
                     </p>
                 </div>
 

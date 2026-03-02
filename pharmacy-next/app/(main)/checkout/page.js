@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronRight, Banknote, ArrowLeft, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -367,9 +368,11 @@ export default function CheckoutPage() {
                             <div className="space-y-3 mb-5 max-h-60 overflow-y-auto">
                                 {cartItems.map((item) => (
                                     <div key={item._id || item.id} className="flex items-center gap-3">
-                                        <img
+                                        <Image
                                             src={item.image}
                                             alt={item.name}
+                                            width={48}
+                                            height={48}
                                             className="w-12 h-12 rounded-lg object-cover bg-gray-50 flex-shrink-0"
                                         />
                                         <div className="flex-1 min-w-0">

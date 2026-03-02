@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Phone, MapPin, CreditCard, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 
 const statusOptions = [
@@ -140,7 +141,13 @@ export default function AdminOrderDetailPage({ params }) {
                                 <div key={idx} className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm flex-shrink-0">
                                         {item.image ? (
-                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg" />
+                                            <Image
+                                                src={item.image}
+                                                alt={item.name}
+                                                width={40}
+                                                height={40}
+                                                className="w-full h-full object-cover rounded-lg"
+                                            />
                                         ) : '💊'}
                                     </div>
                                     <div className="flex-1 min-w-0">

@@ -2,6 +2,7 @@
 
 import { ShoppingCart, Check } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
@@ -48,11 +49,12 @@ const ProductCard = ({ product }) => {
             >
                 <div className="relative w-full h-full flex items-center justify-center transform group-hover:scale-105 transition-transform duration-500">
                     {product.image ? (
-                        <img
+                        <Image
                             src={product.image}
                             alt={product.name}
-                            className="w-full h-full object-contain"
-                            loading="lazy"
+                            fill
+                            className="object-contain"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">

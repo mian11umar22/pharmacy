@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Trash2, Minus, Plus, ChevronRight, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
 import toast from 'react-hot-toast'
 
@@ -64,7 +65,7 @@ export default function CartPage() {
                 </div>
                 <h2 className="text-2xl font-bold text-secondary mb-2">Your cart is empty</h2>
                 <p className="text-text-secondary mb-8 text-center max-w-sm">
-                    Looks like you haven't added any products yet. Browse our store and find what you need!
+                    Looks like you haven&apos;t added any products yet. Browse our store and find what you need!
                 </p>
                 <Link
                     href="/products"
@@ -119,9 +120,11 @@ export default function CartPage() {
                                     >
                                         {/* Image */}
                                         <Link href={`/products/${itemId}`} className="flex-shrink-0">
-                                            <img
+                                            <Image
                                                 src={item.image}
                                                 alt={item.name}
+                                                width={96}
+                                                height={96}
                                                 className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover bg-gray-50"
                                             />
                                         </Link>

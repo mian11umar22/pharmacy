@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowLeft, Phone, MapPin, CreditCard, Package, CheckCircle2, CircleDot, Loader2 } from 'lucide-react'
 
 const statusConfig = {
@@ -143,7 +144,12 @@ export default function OrderDetailPage({ params }) {
                             <div key={item._id} className="flex items-center gap-3">
                                 <div className="w-14 h-14 rounded-xl bg-gray-50 border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
                                     {item.image ? (
-                                        <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1" />
+                                        <Image
+                                            src={item.image}
+                                            alt={item.name}
+                                            fill
+                                            className="object-contain p-1"
+                                        />
                                     ) : (
                                         <Package className="w-6 h-6 text-gray-300" />
                                     )}

@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { ShoppingCart, Minus, Plus, ChevronRight, ArrowLeft, Package, Check, Loader2, AlertCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import ProductCard from '@/components/ui/ProductCard'
@@ -103,7 +104,7 @@ export default function ProductDetailPage({ params: paramsPromise }) {
             <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
                 <AlertCircle className="w-16 h-16 text-danger mb-4" />
                 <h2 className="text-2xl font-bold text-secondary mb-2">{error || 'Product Not Found'}</h2>
-                <p className="text-text-secondary mb-6 text-center max-w-md">The product you're looking for might have been removed or is temporarily unavailable.</p>
+                <p className="text-text-secondary mb-6 text-center max-w-md">The product you&apos;re looking for might have been removed or is temporarily unavailable.</p>
                 <Link href="/products" className="bg-primary text-white font-medium py-3 px-8 rounded-xl hover:bg-primary-dark transition-all shadow-md active:scale-[0.98]">
                     Browse All Products
                 </Link>
@@ -159,9 +160,10 @@ export default function ProductDetailPage({ params: paramsPromise }) {
                                 </span>
                             )}
                             {product.image ? (
-                                <img
+                                <Image
                                     src={product.image}
                                     alt={product.name}
+                                    fill
                                     className="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
                                 />
                             ) : (

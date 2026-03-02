@@ -25,7 +25,7 @@ const PrescriptionBanner = () => {
                             Doctor Prescription
                         </h2>
                         <p className="text-sm md:text-2xl text-white mb-6 md:mb-10 leading-relaxed md:font-bold drop-shadow-xl max-w-sm md:max-w-none mx-auto">
-                            Share your doctor's prescription with us, and we'll bring your medicine right to your door. It's that simple!
+                            Share your doctor&apos;s prescription with us, and we&apos;ll bring your medicine right to your door. It&apos;s that simple!
                         </p>
 
                         <a

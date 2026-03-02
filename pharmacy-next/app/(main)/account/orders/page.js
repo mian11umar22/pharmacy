@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronRight, ArrowLeft, Package, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 
 const statusConfig = {
     pending: { label: 'Pending', color: 'bg-warning/10 text-warning', dot: 'bg-warning' },
@@ -91,7 +92,13 @@ export default function OrdersPage() {
                                                 className="w-10 h-10 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs overflow-hidden"
                                             >
                                                 {item.image ? (
-                                                    <img src={item.image} alt="" className="w-full h-full object-cover" />
+                                                    <Image
+                                                        src={item.image}
+                                                        alt=""
+                                                        width={40}
+                                                        height={40}
+                                                        className="w-full h-full object-cover"
+                                                    />
                                                 ) : (
                                                     <Package className="w-4 h-4 text-gray-400" />
                                                 )}

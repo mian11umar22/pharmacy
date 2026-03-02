@@ -147,8 +147,8 @@ export default function ForgotPasswordPage() {
                     </h1>
                     <div className="mt-2 h-10 flex items-center justify-center">
                         <p className="text-text-secondary text-sm max-w-[280px]">
-                            {step === 1 && "Enter your email and we'll send you a 6-digit code to reset your password."}
-                            {step === 2 && `We've sent a 6-digit verification code to ${email}`}
+                            {step === 1 && "Enter your email and we&apos;ll send you a 6-digit code to reset your password."}
+                            {step === 2 && `We&apos;ve sent a 6-digit verification code to ${email}`}
                             {step === 3 && "Verification successful! You can now set a new secure password."}
                         </p>
                     </div>
@@ -245,7 +245,7 @@ export default function ForgotPasswordPage() {
                                             className="text-sm font-bold text-primary hover:text-primary-dark inline-flex items-center gap-1.5 cursor-pointer decoration-2 underline-offset-4 hover:underline transition-all"
                                         >
                                             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                                            Didn't get the code? Resend
+                                            Didn&apos;t get the code? Resend
                                         </button>
                                     )}
                                 </div>

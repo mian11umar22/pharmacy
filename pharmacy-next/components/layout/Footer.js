@@ -21,7 +21,7 @@ const Footer = () => {
                         </div>
                     </Link>
                     <p className="text-gray-300 text-sm leading-relaxed">
-                        Pakistan's Premium Pharmacy. Your trusted partner for genuine medicines and healthcare essentials, delivered to your doorstep.
+                        Pakistan&apos;s Premium Pharmacy. Your trusted partner for genuine medicines and healthcare essentials, delivered to your doorstep.
                     </p>
                 </div>
 
@@ -42,7 +42,7 @@ const Footer = () => {
                             </div>
                         </Link>
                         <p className="text-gray-300 text-sm leading-relaxed">
-                            Pakistan's Premium Pharmacy. We provide authentic medicines and qualified pharmacist consultation across Lahore and nationwide.
+                            Pakistan&apos;s Premium Pharmacy. We provide authentic medicines and qualified pharmacist consultation across Lahore and nationwide.
                         </p>
                     </div>
 

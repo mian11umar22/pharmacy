@@ -333,7 +333,13 @@ export default function AddProductPage() {
                             className="block border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary transition-colors cursor-pointer overflow-hidden max-h-[200px]"
                         >
                             {imagePreview ? (
-                                <img src={imagePreview} alt="Preview" className="max-h-[160px] mx-auto rounded-lg object-contain" />
+                                <Image
+                                    src={imagePreview}
+                                    alt="Preview"
+                                    width={160}
+                                    height={160}
+                                    className="max-h-[160px] mx-auto rounded-lg object-contain w-auto h-auto"
+                                />
                             ) : (
                                 <>
                                     <Upload className="w-8 h-8 mx-auto mb-2 text-text-secondary" />

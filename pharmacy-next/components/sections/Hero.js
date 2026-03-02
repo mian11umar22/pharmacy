@@ -2,6 +2,7 @@
 
 import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const Hero = () => {
     return (
@@ -53,11 +54,13 @@ const Hero = () => {
 
                     {/* Image / Illustration Side */}
                     <div className="relative animate-scale-in">
-                        <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
-                            <img
+                        <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500 aspect-[4/3] md:aspect-square">
+                            <Image
                                 src="https://images.unsplash.com/photo-1585435557343-3b092031a831?q=80&w=1770&auto=format&fit=crop"
                                 alt="Pharmacist showing medicines"
-                                className="w-full h-full object-cover"
+                                fill
+                                className="object-cover"
+                                priority
                             />
 
                             {/* Floating Cards simulating products */}

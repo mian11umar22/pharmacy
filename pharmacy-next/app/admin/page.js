@@ -134,7 +134,7 @@ export default function AdminDashboard() {
             {/* Header */}
             <div className="mb-6">
                 <h1 className="text-xl sm:text-2xl font-bold text-secondary">Dashboard</h1>
-                <p className="text-sm text-text-secondary mt-1">Welcome back! Here's your store overview</p>
+                <p className="text-sm text-text-secondary mt-1">Welcome back! Here&apos;s your store overview</p>
             </div>
 
             {/* Stats Grid */}

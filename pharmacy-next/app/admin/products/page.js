@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search, Plus, Pencil, Trash2 } from 'lucide-react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 
 
@@ -80,7 +81,13 @@ export default function AdminProductsPage() {
                         <div className="flex items-start gap-3">
                             <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
                                 {product.image ? (
-                                    <img src={product.image} alt="" className="w-full h-full object-cover" />
+                                    <Image
+                                        src={product.image}
+                                        alt=""
+                                        width={48}
+                                        height={48}
+                                        className="w-full h-full object-cover"
+                                    />
                                 ) : '💊'}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -134,7 +141,13 @@ export default function AdminProductsPage() {
                                 <td className="px-5 py-3.5">
                                     <div className="flex items-center gap-3">
                                         {product.image ? (
-                                            <img src={product.image} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                                            <Image
+                                                src={product.image}
+                                                alt=""
+                                                width={32}
+                                                height={32}
+                                                className="w-8 h-8 rounded-lg object-cover"
+                                            />
                                         ) : (
                                             <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-sm flex-shrink-0">💊</div>
                                         )}

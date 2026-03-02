@@ -3,6 +3,7 @@
 import { useState, use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { ShoppingCart, Minus, Plus, ChevronRight, ArrowLeft, Package, Check } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { products } from '@/services/mockData'
@@ -24,7 +25,7 @@ export default function ProductDetail({ params: paramsPromise }) {
             <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
                 <div className="text-6xl mb-4">😕</div>
                 <h2 className="text-2xl font-bold text-secondary mb-2">Product Not Found</h2>
-                <p className="text-text-secondary mb-6">The product you're looking for doesn't exist.</p>
+                <p className="text-text-secondary mb-6">The product you&apos;re looking for doesn&apos;t exist.</p>
                 <Link href="/products" className="bg-primary text-white font-medium py-2 px-6 rounded-lg hover:bg-primary-dark transition-colors">
                     Browse Products
                 </Link>
@@ -105,10 +106,11 @@ export default function ProductDetail({ params: paramsPromise }) {
                                     {product.discount}% OFF
                                 </span>
                             )}
-                            <img
+                            <Image
                                 src={product.image}
                                 alt={product.name}
-                                className="w-full h-full object-contain"
+                                fill
+                                className="object-contain"
                             />
                         </div>
                     </div>
