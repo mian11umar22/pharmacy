@@ -18,8 +18,8 @@
     "mongoose": "^9.2.3",
     "next": "15.1.9",
     "nodemailer": "^8.0.1",
-    "react": "19.0.1",
-    "react-dom": "19.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-hook-form": "^7.71.2",
     "react-hot-toast": "^2.6.0",
     "tailwind-merge": "^3.5.0",
@@ -28,8 +28,9 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
+    "@eslint/eslintrc": "^3.2.0",
     "eslint": "^9",
-    "eslint-config-next": "15.1.9",
+    "eslint-config-next": "^15.1.0",
     "tailwindcss": "^4"
   }
 }
