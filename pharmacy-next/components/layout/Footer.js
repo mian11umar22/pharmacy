@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Facebook, Instagram, Twitter, Phone, Mail, MapPin } from 'lucide-react'
 
 const Footer = () => {
@@ -8,10 +9,17 @@ const Footer = () => {
 
                 {/* About — full width on mobile */}
                 <div className="mb-8 md:hidden">
-                    <h3 className="text-xl font-extrabold mb-3 flex items-center gap-2">
-                        <div className="w-7 h-7 bg-primary rounded flex items-center justify-center text-white text-base">H+</div>
-                        HOPE PHARMACY
-                    </h3>
+                    <Link href="/" className="inline-block bg-white p-2 rounded-lg mb-4">
+                        <div className="overflow-hidden" style={{ clipPath: 'inset(2% 0 2% 0)' }}>
+                            <Image
+                                src="/images/logo.png"
+                                alt="Hope Pharmacy"
+                                width={140}
+                                height={50}
+                                className="h-12 w-auto object-contain"
+                            />
+                        </div>
+                    </Link>
                     <p className="text-gray-300 text-sm leading-relaxed">
                         Pakistan's Premium Pharmacy. Your trusted partner for genuine medicines and healthcare essentials, delivered to your doorstep.
                     </p>
@@ -22,10 +30,17 @@ const Footer = () => {
 
                     {/* About — desktop only (mobile shown above) */}
                     <div className="hidden md:block">
-                        <h3 className="text-xl font-extrabold mb-4 flex items-center gap-2">
-                            <div className="w-7 h-7 bg-primary rounded flex items-center justify-center text-white text-base">H+</div>
-                            HOPE PHARMACY
-                        </h3>
+                        <Link href="/" className="inline-block bg-white p-3 rounded-xl mb-4">
+                            <div className="overflow-hidden" style={{ clipPath: 'inset(2% 0 5% 0)' }}>
+                                <Image
+                                    src="/images/logo.png"
+                                    alt="Hope Pharmacy"
+                                    width={180}
+                                    height={70}
+                                    className="h-16 w-auto object-contain"
+                                />
+                            </div>
+                        </Link>
                         <p className="text-gray-300 text-sm leading-relaxed">
                             Pakistan's Premium Pharmacy. We provide authentic medicines and qualified pharmacist consultation across Lahore and nationwide.
                         </p>
@@ -33,23 +48,21 @@ const Footer = () => {
 
                     {/* Quick Links */}
                     <div>
-                        <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4">Quick Links</h3>
+                        <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4">Shop</h3>
                         <ul className="space-y-2 text-sm text-gray-300">
                             <li><Link href="/" className="hover:text-primary transition">Home</Link></li>
                             <li><Link href="/products" className="hover:text-primary transition">All Products</Link></li>
-                            <li><Link href="/about" className="hover:text-primary transition">About Us</Link></li>
-                            <li><Link href="/contact" className="hover:text-primary transition">Contact</Link></li>
+                            <li><Link href="/cart" className="hover:text-primary transition">Shopping Cart</Link></li>
                         </ul>
                     </div>
 
-                    {/* Categories */}
+                    {/* Customer Service */}
                     <div>
-                        <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4">Categories</h3>
+                        <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4">Account</h3>
                         <ul className="space-y-2 text-sm text-gray-300">
-                            <li><Link href="/products?category=Medicine" className="hover:text-primary transition">Medicine</Link></li>
-                            <li><Link href="/products?category=Personal Care" className="hover:text-primary transition">Personal Care</Link></li>
-                            <li><Link href="/products?category=Baby Care" className="hover:text-primary transition">Baby Care</Link></li>
-                            <li><Link href="/products?category=Nutrition" className="hover:text-primary transition">Nutrition</Link></li>
+                            <li><Link href="/account" className="hover:text-primary transition">My Account</Link></li>
+                            <li><Link href="/account/orders" className="hover:text-primary transition">Order History</Link></li>
+                            <li><Link href="/login" className="hover:text-primary transition">Login / Register</Link></li>
                         </ul>
                     </div>
 

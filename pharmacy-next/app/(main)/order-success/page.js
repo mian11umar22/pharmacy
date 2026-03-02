@@ -87,7 +87,7 @@ export default function OrderSuccessPage() {
                     {/* Items */}
                     <div className="space-y-2 mb-5 pb-5 border-b border-border">
                         {order.items.map((item) => (
-                            <div key={item.id} className="flex justify-between text-sm">
+                            <div key={item._id || item.id} className="flex justify-between text-sm">
                                 <span className="text-text-secondary">
                                     {item.name} <span className="text-xs">×{item.quantity}</span>
                                 </span>

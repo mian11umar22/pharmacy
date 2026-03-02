@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Banknote, ArrowLeft } from 'lucide-react'
+import { ChevronRight, Banknote, ArrowLeft, Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCart } from '@/context/CartContext'
+import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
-
-const DELIVERY_FEE = 150
 
 // ── Zod Validation Schema ──────────────────────────────
 const checkoutSchema = z.object({
@@ -45,6 +44,12 @@ const checkoutSchema = z.object({
         .max(200, 'Address is too long')
         .regex(/[a-zA-Z]/, 'Address must contain at least some letters'),
 
+    city: z
+        .string()
+        .trim()
+        .min(1, 'City is required')
+        .min(3, 'City name is too short'),
+
     notes: z
         .string()
         .trim()
@@ -57,44 +62,76 @@ const checkoutSchema = z.object({
 export default function CheckoutPage() {
     const router = useRouter()
     const { cartItems, getCartTotal, clearCart } = useCart()
+    const { user, loading: authLoading } = useAuth()
+
+    const [deliveryFee, setDeliveryFee] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isHydrated, setIsHydrated] = useState(false)
+    const [isRedirectingSuccess, setIsRedirectingSuccess] = useState(false)
 
+    // Hydration check
     useEffect(() => {
         setIsHydrated(true)
     }, [])
 
+    // Fetch dynamic delivery fee
+    useEffect(() => {
+        const fetchFee = async () => {
+            try {
+                const res = await fetch('/api/settings')
+                const data = await res.json()
+                if (res.ok && data.settings) {
+                    setDeliveryFee(Number(data.settings.delivery_fee) || 150)
+                }
+            } catch (error) {
+                console.error('Fetch delivery fee error:', error)
+                setDeliveryFee(150)
+            }
+        }
+        fetchFee()
+    }, [])
+
     const subtotal = getCartTotal()
-    const delivery = cartItems.length > 0 ? DELIVERY_FEE : 0
+    const delivery = cartItems.length > 0 ? deliveryFee : 0
     const total = subtotal + delivery
 
     const {
         register,
         handleSubmit,
         formState: { errors },
+        setValue
     } = useForm({
         resolver: zodResolver(checkoutSchema),
         defaultValues: {
-            fullName: '',
-            email: '',
+            fullName: user?.name || '',
+            email: user?.email || '',
             phone: '',
             address: '',
+            city: '',
             notes: '',
         },
     })
 
+    // Autofill user data when user loads
+    useEffect(() => {
+        if (user) {
+            setValue('fullName', user.name)
+            setValue('email', user.email)
+        }
+    }, [user, setValue])
+
     // Redirect to cart if empty (only after hydration to avoid SSR mismatch)
     useEffect(() => {
-        if (isHydrated && cartItems.length === 0 && !isSubmitting) {
+        if (isHydrated && cartItems.length === 0 && !isSubmitting && !isRedirectingSuccess) {
             router.push('/products')
         }
-    }, [isHydrated, cartItems, router, isSubmitting])
+    }, [isHydrated, cartItems, router, isSubmitting, isRedirectingSuccess])
 
-    if (!isHydrated || cartItems.length === 0) {
+    if (!isHydrated) {
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center bg-background px-4">
-                <div className="text-6xl mb-4">🛒</div>
-                <h2 className="text-2xl font-bold text-secondary mb-2">Redirecting...</h2>
+                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                <h2 className="text-xl font-bold text-secondary">Loading checkout...</h2>
             </div>
         )
     }
@@ -102,28 +139,64 @@ export default function CheckoutPage() {
     const onSubmit = async (data) => {
         setIsSubmitting(true)
 
-        // Simulate order placement
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: cartItems.map(item => ({
+                        product: item._id || item.id,
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity,
+                        image: item.image
+                    })),
+                    subtotal,
+                    deliveryFee: delivery,
+                    total,
+                    shippingAddress: {
+                        name: data.fullName,
+                        email: data.email,
+                        phone: data.phone,
+                        address: data.address,
+                        city: data.city
+                    },
+                    paymentMethod: 'cod',
+                    notes: data.notes
+                })
+            })
 
-        // Generate mock order number
-        const orderNumber = `ORD-${Date.now().toString().slice(-6)}`
+            const result = await res.json()
 
-        // Save order info for success page
-        const orderData = {
-            orderNumber,
-            items: cartItems,
-            subtotal,
-            delivery,
-            total,
-            customer: data,
-            paymentMethod: 'COD',
-            date: new Date().toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' }),
+            if (res.ok) {
+                // Save order info for success page
+                const orderData = {
+                    orderNumber: result.order.orderNumber || result.order._id.slice(-6).toUpperCase(),
+                    items: cartItems,
+                    subtotal,
+                    delivery,
+                    total,
+                    customer: data,
+                    paymentMethod: 'cod',
+                    date: new Date().toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' }),
+                }
+                sessionStorage.setItem('lastOrder', JSON.stringify(orderData))
+
+                toast.success('Order placed successfully!', { position: 'top-center' })
+                setIsRedirectingSuccess(true)
+
+                // Clear cart and navigate
+                clearCart()
+                router.push('/order-success')
+            } else {
+                throw new Error(result.error || 'Failed to place order')
+            }
+        } catch (error) {
+            console.error('Submit order error:', error)
+            toast.error(error.message || 'Something went wrong. Please try again.')
+        } finally {
+            setIsSubmitting(false)
         }
-        sessionStorage.setItem('lastOrder', JSON.stringify(orderData))
-
-        // Clear cart and navigate
-        clearCart()
-        router.push('/order-success')
     }
 
     const onError = () => {
@@ -233,6 +306,20 @@ export default function CheckoutPage() {
                                     {errors.address && <p className="text-danger text-xs mt-1">{errors.address.message}</p>}
                                 </div>
 
+                                {/* City */}
+                                <div>
+                                    <label className="block text-sm font-medium text-secondary mb-1.5">
+                                        City <span className="text-danger">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Lahore"
+                                        {...register('city')}
+                                        className={inputClass('city')}
+                                    />
+                                    {errors.city && <p className="text-danger text-xs mt-1">{errors.city.message}</p>}
+                                </div>
+
                                 {/* Notes */}
                                 <div>
                                     <label className="block text-sm font-medium text-secondary mb-1.5">
@@ -279,7 +366,7 @@ export default function CheckoutPage() {
                             {/* Items */}
                             <div className="space-y-3 mb-5 max-h-60 overflow-y-auto">
                                 {cartItems.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-3">
+                                    <div key={item._id || item.id} className="flex items-center gap-3">
                                         <img
                                             src={item.image}
                                             alt={item.name}

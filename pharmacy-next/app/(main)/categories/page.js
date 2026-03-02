@@ -1,17 +1,34 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ChevronRight, ChevronLeft, Search } from 'lucide-react'
-import { CATEGORIES_DATA } from '@/lib/categories-data'
+import { ChevronRight, ChevronLeft, Search, Loader2 } from 'lucide-react'
 import { clsx } from 'clsx'
 
 export default function CategoriesPage() {
-    // Navigation state: which level are we on?
+    const [categories, setCategories] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
     const [activeLevel, setActiveLevel] = useState(1)
     const [selectedCategory, setSelectedCategory] = useState(null)
     const [selectedSubcategory, setSelectedSubcategory] = useState(null)
     const [searchQuery, setSearchQuery] = useState('')
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch('/api/categories')
+                const data = await res.json()
+                if (res.ok) {
+                    setCategories(data.categories)
+                }
+            } catch (error) {
+                console.error('Failed to fetch categories:', error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchCategories()
+    }, [])
 
     // Get current title for header
     const getTitle = () => {
@@ -33,8 +50,16 @@ export default function CategoriesPage() {
 
     // Filter categories by search
     const filteredCategories = searchQuery
-        ? CATEGORIES_DATA.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        : CATEGORIES_DATA
+        ? categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        : categories
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        )
+    }
 
     return (
         <div className="bg-background min-h-screen pb-20">
@@ -46,7 +71,7 @@ export default function CategoriesPage() {
                         {activeLevel > 1 && (
                             <button
                                 onClick={goBack}
-                                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
                             >
                                 <ChevronLeft className="w-5 h-5 text-secondary" />
                             </button>
@@ -76,7 +101,7 @@ export default function CategoriesPage() {
             {activeLevel > 1 && (
                 <div className="px-4 py-2 bg-white border-b border-border">
                     <div className="flex items-center gap-1 text-xs text-text-secondary max-w-7xl mx-auto">
-                        <button onClick={() => { setActiveLevel(1); setSelectedCategory(null); setSelectedSubcategory(null) }} className="hover:text-primary transition-colors">
+                        <button onClick={() => { setActiveLevel(1); setSelectedCategory(null); setSelectedSubcategory(null) }} className="hover:text-primary transition-colors cursor-pointer">
                             All
                         </button>
                         {selectedCategory && (
@@ -84,7 +109,7 @@ export default function CategoriesPage() {
                                 <ChevronRight className="w-3 h-3" />
                                 <button
                                     onClick={() => { setActiveLevel(2); setSelectedSubcategory(null) }}
-                                    className={clsx(activeLevel === 2 ? "text-primary font-bold" : "hover:text-primary transition-colors")}
+                                    className={clsx("cursor-pointer", activeLevel === 2 ? "text-primary font-bold" : "hover:text-primary transition-colors")}
                                 >
                                     {selectedCategory.name}
                                 </button>
@@ -108,21 +133,21 @@ export default function CategoriesPage() {
                     <div className="grid grid-cols-1 gap-2 animate-fade-in">
                         {filteredCategories.map((category) => (
                             <button
-                                key={category.id}
+                                key={category._id}
                                 onClick={() => {
                                     setSelectedCategory(category)
                                     setActiveLevel(2)
                                     setSearchQuery('')
                                 }}
-                                className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-border hover:border-primary/30 hover:shadow-md transition-all group active:scale-[0.98]"
+                                className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-border hover:border-primary/30 hover:shadow-md transition-all group active:scale-[0.98] cursor-pointer"
                             >
-                                <div className={`w-12 h-12 rounded-xl ${category.bgColor} flex items-center justify-center`}>
-                                    <span className={`text-lg font-black ${category.letterColor}`}>{category.name.charAt(0)}</span>
+                                <div className={`w-12 h-12 rounded-xl ${category.bgColor || 'bg-primary/5'} flex items-center justify-center`}>
+                                    <span className={`text-lg font-black ${category.letterColor || 'text-primary'}`}>{category.name.charAt(0)}</span>
                                 </div>
                                 <div className="flex-1 text-left">
                                     <h3 className="font-bold text-secondary group-hover:text-primary transition-colors">{category.name}</h3>
                                     <p className="text-xs text-text-secondary mt-0.5">
-                                        {category.subcategories.length} subcategories
+                                        {category.subcategories?.length || 0} subcategories
                                     </p>
                                 </div>
                                 <ChevronRight className="w-5 h-5 text-text-secondary group-hover:text-primary transition-colors" />
@@ -144,11 +169,11 @@ export default function CategoriesPage() {
                     <div className="grid grid-cols-1 gap-2 animate-fade-in">
                         {/* View all products in this category */}
                         <Link
-                            href={`/products?category=${selectedCategory.id}`}
-                            className="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/20 hover:bg-primary/10 transition-all group"
+                            href={`/products?category=${selectedCategory.slug}`}
+                            className="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/20 hover:bg-primary/10 transition-all group shadow-sm active:scale-[0.98]"
                         >
-                            <div className={`w-10 h-10 rounded-xl ${selectedCategory.bgColor} flex items-center justify-center`}>
-                                <span className={`text-sm font-black ${selectedCategory.letterColor}`}>{selectedCategory.name.charAt(0)}</span>
+                            <div className={`w-10 h-10 rounded-xl ${selectedCategory.bgColor || 'bg-primary/10'} flex items-center justify-center`}>
+                                <span className={`text-sm font-black ${selectedCategory.letterColor || 'text-primary'}`}>{selectedCategory.name.charAt(0)}</span>
                             </div>
                             <div className="flex-1 text-left">
                                 <h3 className="font-bold text-primary">View All {selectedCategory.name}</h3>
@@ -157,23 +182,39 @@ export default function CategoriesPage() {
                             <ChevronRight className="w-5 h-5 text-primary" />
                         </Link>
 
-                        {selectedCategory.subcategories.map((sub) => (
-                            <button
-                                key={sub.id}
-                                onClick={() => {
-                                    setSelectedSubcategory(sub)
-                                    setActiveLevel(3)
-                                }}
-                                className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-border hover:border-primary/30 hover:shadow-md transition-all group active:scale-[0.98]"
-                            >
-                                <div className="flex-1 text-left">
-                                    <h3 className="font-bold text-secondary group-hover:text-primary transition-colors">{sub.name}</h3>
-                                    <p className="text-xs text-text-secondary mt-0.5">
-                                        {sub.items.length} items
-                                    </p>
-                                </div>
-                                <ChevronRight className="w-5 h-5 text-text-secondary group-hover:text-primary transition-colors" />
-                            </button>
+                        {selectedCategory.subcategories?.map((sub) => (
+                            sub.items?.length === 0 ? (
+                                // No Level 3 items — go directly to products
+                                <Link
+                                    key={sub._id}
+                                    href={`/products?category=${selectedCategory.slug}&sub=${sub.slug}`}
+                                    className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-border hover:border-primary/30 hover:shadow-md transition-all group active:scale-[0.98]"
+                                >
+                                    <div className="flex-1 text-left">
+                                        <h3 className="font-bold text-secondary group-hover:text-primary transition-colors">{sub.name}</h3>
+                                        <p className="text-xs text-text-secondary mt-0.5">Browse products</p>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-text-secondary group-hover:text-primary transition-colors" />
+                                </Link>
+                            ) : (
+                                // Has Level 3 items — drill down
+                                <button
+                                    key={sub._id}
+                                    onClick={() => {
+                                        setSelectedSubcategory(sub)
+                                        setActiveLevel(3)
+                                    }}
+                                    className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-border hover:border-primary/30 hover:shadow-md transition-all group active:scale-[0.98] cursor-pointer"
+                                >
+                                    <div className="flex-1 text-left">
+                                        <h3 className="font-bold text-secondary group-hover:text-primary transition-colors">{sub.name}</h3>
+                                        <p className="text-xs text-text-secondary mt-0.5">
+                                            {sub.items?.length || 0} items
+                                        </p>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-text-secondary group-hover:text-primary transition-colors" />
+                                </button>
+                            )
                         ))}
                     </div>
                 )}
@@ -183,8 +224,8 @@ export default function CategoriesPage() {
                     <div className="grid grid-cols-1 gap-2 animate-fade-in">
                         {/* View all products in this subcategory */}
                         <Link
-                            href={`/products?category=${selectedCategory.id}&sub=${selectedSubcategory.id}`}
-                            className="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/20 hover:bg-primary/10 transition-all group"
+                            href={`/products?category=${selectedCategory.slug}&sub=${selectedSubcategory.slug}`}
+                            className="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/20 hover:bg-primary/10 transition-all group shadow-sm active:scale-[0.98]"
                         >
                             <div className="flex-1 text-left">
                                 <h3 className="font-bold text-primary">View All {selectedSubcategory.name}</h3>
@@ -193,10 +234,10 @@ export default function CategoriesPage() {
                             <ChevronRight className="w-5 h-5 text-primary" />
                         </Link>
 
-                        {selectedSubcategory.items.map((item) => (
+                        {selectedSubcategory.items?.map((item) => (
                             <Link
-                                key={item.id}
-                                href={`/products?category=${selectedCategory.id}&sub=${selectedSubcategory.id}&item=${item.id}`}
+                                key={item._id}
+                                href={`/products?category=${selectedCategory.slug}&sub=${selectedSubcategory.slug}&item=${item.slug}`}
                                 className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-border hover:border-primary/30 hover:shadow-md transition-all group active:scale-[0.98]"
                             >
                                 <div className="w-2 h-2 rounded-full bg-primary/30 group-hover:bg-primary transition-colors"></div>

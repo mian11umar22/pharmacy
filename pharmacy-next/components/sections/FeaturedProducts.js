@@ -1,21 +1,30 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ProductCard from '../ui/ProductCard'
 import ProductSkeleton from '../ui/ProductSkeleton'
-import { products } from '@/services/mockData'
-import { useState, useEffect } from 'react'
 
 const FeaturedProducts = () => {
+    const [products, setProducts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
 
-    // Select top 4 products for featured section
-    const featuredItems = products.slice(0, 4)
-
     useEffect(() => {
-        // Simulate a slight delay to show skeletons (useful for UX testing)
-        const timer = setTimeout(() => setIsLoading(false), 2000)
-        return () => clearTimeout(timer)
+        const fetchFeaturedProducts = async () => {
+            try {
+                // Fetch the latest 8 products as "featured"
+                const res = await fetch('/api/products?limit=8&sort=newest')
+                const data = await res.json()
+                if (res.ok) {
+                    setProducts(data.products)
+                }
+            } catch (error) {
+                console.error('Failed to fetch featured products:', error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchFeaturedProducts()
     }, [])
 
     return (
@@ -23,34 +32,40 @@ const FeaturedProducts = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-end mb-8">
                     <div className="animate-fade-up">
-                        <h2 className="text-3xl font-bold text-secondary mb-2">Featured Products</h2>
-                        <p className="text-text-secondary">Top selling medicines and healthcare products</p>
+                        <h2 className="text-2xl md:text-4xl font-black text-secondary mb-2 tracking-tight">Featured <span className="text-primary">Products</span></h2>
+                        <p className="text-sm md:text-base text-text-secondary font-medium">Top quality medicines and healthcare essentials</p>
                     </div>
-                    <Link href="/products" className="text-primary font-semibold hover:text-primary-dark transition-colors hidden md:block">
-                        View All &rarr;
+                    <Link href="/products" className="text-primary font-bold hover:underline mb-1 text-sm md:text-base hidden md:block">
+                        View All Products →
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     {isLoading ? (
-                        [...Array(4)].map((_, i) => (
+                        [...Array(8)].map((_, i) => (
                             <ProductSkeleton key={i} />
                         ))
-                    ) : (
-                        featuredItems.map((product, index) => (
+                    ) : products.length > 0 ? (
+                        products.map((product, index) => (
                             <div
-                                key={product.id}
+                                key={product._id}
                                 className="h-full animate-fade-up"
-                                style={{ animationDelay: `${index * 150}ms` }}
+                                style={{ animationDelay: `${index * 100}ms` }}
                             >
                                 <ProductCard product={product} />
                             </div>
                         ))
+                    ) : (
+                        <div className="col-span-full py-12 text-center text-text-secondary">
+                            No products found at the moment.
+                        </div>
                     )}
                 </div>
 
                 <div className="mt-8 text-center md:hidden">
-                    <Link href="/products" className="btn-outline w-full block">View All Products</Link>
+                    <Link href="/products" className="bg-primary text-white font-bold py-3 px-6 rounded-xl block shadow-md">
+                        View All Products
+                    </Link>
                 </div>
             </div>
         </section>

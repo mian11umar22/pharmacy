@@ -1,6 +1,7 @@
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
@@ -14,18 +15,25 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "Hope Pharmacy - Pakistan's Premium Pharmacy",
-  description: "Your trusted online pharmacy for genuine medicines in Lahore and across Pakistan.",
+  title: "Hope Pharmacy - Genuine Medicines & Healthcare",
+  description: "Pakistan's Premium Pharmacy. Your trusted partner for genuine medicines, delivered to your doorstep in Lahore and nationwide.",
+  icons: {
+    icon: "/images/logo.png",
+    shortcut: "/images/logo.png",
+    apple: "/images/logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${outfit.variable} font-sans antialiased`}>
-        <CartProvider>
-          {children}
-          <Toaster position="bottom-right" />
-        </CartProvider>
+      <body className={`${inter.variable} ${outfit.variable} font-sans antialiased text-secondary`}>
+        <AuthProvider>
+          <CartProvider>
+            {children}
+            <Toaster position="bottom-right" />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

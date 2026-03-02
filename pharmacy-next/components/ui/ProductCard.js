@@ -42,19 +42,31 @@ const ProductCard = ({ product }) => {
             )}
 
             {/* Image */}
-            <Link href={`/product/${product.id}`} className="block relative overflow-hidden rounded-xl bg-white aspect-[4/5] mb-3 md:mb-4 border border-border/20 p-2">
-                <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                />
+            <Link
+                href={`/products/${product._id}`}
+                className="group block relative overflow-hidden rounded-xl bg-white aspect-[4/5] mb-3 md:mb-4 border border-border/20 p-2"
+            >
+                <div className="relative w-full h-full flex items-center justify-center transform group-hover:scale-105 transition-transform duration-500">
+                    {product.image ? (
+                        <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-contain"
+                            loading="lazy"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+                            <span className="text-4xl">💊</span>
+                        </div>
+                    )}
+                </div>
             </Link>
 
             {/* Content */}
             <div className="flex flex-col flex-grow">
-                <p className="text-xs text-text-secondary mb-1">{product.category}</p>
+                <p className="text-xs text-text-secondary mb-1">{product.category?.name || 'Category'}</p>
 
-                <Link href={`/product/${product.id}`} className="font-semibold text-secondary text-sm md:text-base mb-2 md:mb-3 hover:text-primary transition-colors line-clamp-2 leading-snug">
+                <Link href={`/products/${product._id}`} className="font-semibold text-secondary text-sm md:text-base mb-2 md:mb-3 hover:text-primary transition-colors line-clamp-2 leading-snug">
                     {product.name}
                 </Link>
 

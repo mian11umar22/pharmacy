@@ -5,9 +5,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useAuth } from '@/context/AuthContext'
+
+import Image from 'next/image'
 
 export default function LoginPage() {
     const router = useRouter()
+    const { login } = useAuth()
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [formData, setFormData] = useState({ email: '', password: '' })
@@ -28,13 +32,40 @@ export default function LoginPage() {
         if (!validate()) return
 
         setIsLoading(true)
-        // Simulate API call
-        await new Promise(r => setTimeout(r, 1500))
-        toast.success('Login successful!', {
-            style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
-        })
-        setIsLoading(false)
-        // router.push('/account')
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Login failed')
+            }
+
+            toast.success('Login successful!', {
+                style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
+            })
+
+            // Call login from context
+            login(data.user)
+
+            // Dynamic Redirection based on role
+            if (data.user.role === 'admin') {
+                router.push('/admin')
+            } else {
+                router.push('/account')
+            }
+            router.refresh()
+        } catch (error) {
+            toast.error(error.message, {
+                style: { borderRadius: '10px', background: '#ff4b4b', color: '#fff', fontSize: '14px' },
+            })
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
@@ -43,9 +74,18 @@ export default function LoginPage() {
 
                 {/* Branding Section */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg mb-4">
-                        <span className="text-white text-2xl font-bold">H+</span>
-                    </div>
+                    <Link href="/" className="inline-flex items-center justify-center mb-6">
+                        <div className="overflow-hidden" style={{ clipPath: 'inset(2% 0 2% 0)' }}>
+                            <Image
+                                src="/images/logo.png"
+                                alt="Hope Pharmacy"
+                                width={160}
+                                height={60}
+                                className="h-16 w-auto object-contain"
+                                priority
+                            />
+                        </div>
+                    </Link>
                     <h1 className="text-2xl font-extrabold text-secondary">Welcome Back</h1>
                     <p className="text-text-secondary text-sm mt-1">Sign in to your Hope Pharmacy account</p>
                 </div>
@@ -75,9 +115,12 @@ export default function LoginPage() {
                         <div>
                             <div className="flex items-center justify-between mb-1.5">
                                 <label className="text-sm font-semibold text-secondary">Password</label>
-                                <button type="button" className="text-xs text-primary font-medium hover:underline">
+                                <Link
+                                    href="/forgot-password"
+                                    className="text-xs text-primary font-medium hover:underline"
+                                >
                                     Forgot Password?
-                                </button>
+                                </Link>
                             </div>
                             <div className="relative">
                                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 pointer-events-none" />

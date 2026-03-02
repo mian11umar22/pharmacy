@@ -4,14 +4,18 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Search, ShoppingCart, User, Menu, X } from 'lucide-react'
 import { useState } from 'react'
+import Image from 'next/image'
 import { useCart } from '../../context/CartContext'
 import CategoryBar from './CategoryBar'
+
+import { useAuth } from '../../context/AuthContext'
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const router = useRouter()
     const { getCartCount } = useCart()
+    const { user, logout } = useAuth()
 
     const cartCount = getCartCount()
 
@@ -33,16 +37,19 @@ const Header = () => {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
+                <div className="flex justify-between items-center h-20">
 
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-2xl shadow-sm">
-                            H+
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-xl font-extrabold text-secondary leading-none">HOPE</span>
-                            <span className="text-[10px] font-bold text-primary tracking-[0.2em] mt-0.5">PHARMACY</span>
+                    <Link href="/" className="flex items-center">
+                        <div className="overflow-hidden" style={{ clipPath: 'inset(2% 0 2% 0)' }}>
+                            <Image
+                                src="/images/logo.png"
+                                alt="Hope Pharmacy"
+                                width={160}
+                                height={60}
+                                className="h-16 w-auto object-contain"
+                                priority
+                            />
                         </div>
                     </Link>
 
@@ -67,10 +74,34 @@ const Header = () => {
                             <span className="text-xs mt-0.5">Shop</span>
                         </Link>
 
-                        <Link href="/login" className="hidden md:flex flex-col items-center text-text-secondary hover:text-primary transition">
-                            <User className="w-6 h-6" />
-                            <span className="text-xs mt-0.5">Login</span>
-                        </Link>
+                        {user ? (
+                            <div className="relative group hidden md:block">
+                                <Link
+                                    href={user.role === 'admin' ? '/admin' : '/account'}
+                                    className="flex flex-col items-center text-text-secondary hover:text-primary transition"
+                                >
+                                    <User className="w-6 h-6" />
+                                    <span className="text-xs mt-0.5 truncate max-w-[80px]">
+                                        {user.role === 'admin' ? 'Dashboard' : 'Account'}
+                                    </span>
+                                </Link>
+
+                                {/* Simple hover menu for logout */}
+                                <div className="absolute top-full right-0 mt-2 w-32 bg-white border border-border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto overflow-hidden">
+                                    <button
+                                        onClick={logout}
+                                        className="w-full text-left px-4 py-2 text-xs text-text-secondary hover:bg-gray-50 hover:text-danger transition-colors font-semibold"
+                                    >
+                                        Log Out
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <Link href="/login" className="hidden md:flex flex-col items-center text-text-secondary hover:text-primary transition">
+                                <User className="w-6 h-6" />
+                                <span className="text-xs mt-0.5">Login</span>
+                            </Link>
+                        )}
 
                         <Link href="/cart" className="flex flex-col items-center text-text-secondary hover:text-primary transition relative">
                             <ShoppingCart className="w-6 h-6" />
@@ -122,13 +153,36 @@ const Header = () => {
                         >
                             🛒 Shop Medicines
                         </Link>
-                        <Link
-                            href="/login"
-                            className="block px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors"
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            👤 Login / Register
-                        </Link>
+
+                        {user ? (
+                            <>
+                                <Link
+                                    href={user.role === 'admin' ? '/admin' : '/account'}
+                                    className="block px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors"
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    👤 {user.role === 'admin' ? 'Admin Dashboard' : 'My Account'}
+                                </Link>
+                                <button
+                                    onClick={() => {
+                                        setIsMenuOpen(false)
+                                        logout()
+                                    }}
+                                    className="w-full text-left block px-3 py-3 rounded-lg text-base font-medium text-danger hover:bg-gray-50 transition-colors"
+                                >
+                                    🚪 Logout
+                                </button>
+                            </>
+                        ) : (
+                            <Link
+                                href="/login"
+                                className="block px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors"
+                                onClick={() => setIsMenuOpen(false)}
+                            >
+                                👤 Login / Register
+                            </Link>
+                        )}
+
                         <Link
                             href="/cart"
                             className="block px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors"

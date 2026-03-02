@@ -1,23 +1,43 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Trash2, Minus, Plus, ChevronRight, ShoppingBag, ArrowLeft } from 'lucide-react'
+import { Trash2, Minus, Plus, ChevronRight, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import toast from 'react-hot-toast'
-
-const DELIVERY_FEE = 150
 
 export default function CartPage() {
     const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart()
     const router = useRouter()
 
+    const [deliveryFee, setDeliveryFee] = useState(0)
+    const [isLoadingFee, setIsLoadingFee] = useState(true)
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch('/api/settings')
+                const data = await res.json()
+                if (res.ok && data.settings) {
+                    setDeliveryFee(Number(data.settings.delivery_fee) || 150)
+                }
+            } catch (error) {
+                console.error('Failed to fetch delivery fee:', error)
+                setDeliveryFee(150) // Fallback
+            } finally {
+                setIsLoadingFee(false)
+            }
+        }
+        fetchSettings()
+    }, [])
+
     const subtotal = getCartTotal()
-    const delivery = cartItems.length > 0 ? DELIVERY_FEE : 0
+    const delivery = cartItems.length > 0 ? deliveryFee : 0
     const total = subtotal + delivery
 
     const handleRemove = (item) => {
-        removeFromCart(item.id)
+        removeFromCart(item._id || item.id)
         toast.success(`${item.name} removed from cart`, {
             duration: 2000,
             position: 'bottom-center',
@@ -90,72 +110,75 @@ export default function CartPage() {
                     {/* Cart Items Column */}
                     <div className="flex-1">
                         <div className="space-y-4">
-                            {cartItems.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="bg-white rounded-xl border border-border p-4 flex gap-4 animate-fade-in"
-                                >
-                                    {/* Image */}
-                                    <Link href={`/product/${item.id}`} className="flex-shrink-0">
-                                        <img
-                                            src={item.image}
-                                            alt={item.name}
-                                            className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover bg-gray-50"
-                                        />
-                                    </Link>
+                            {cartItems.map((item) => {
+                                const itemId = item._id || item.id;
+                                return (
+                                    <div
+                                        key={itemId}
+                                        className="bg-white rounded-xl border border-border p-4 flex gap-4 animate-fade-in"
+                                    >
+                                        {/* Image */}
+                                        <Link href={`/products/${itemId}`} className="flex-shrink-0">
+                                            <img
+                                                src={item.image}
+                                                alt={item.name}
+                                                className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover bg-gray-50"
+                                            />
+                                        </Link>
 
-                                    {/* Details */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-start gap-2">
-                                            <div>
-                                                <p className="text-xs text-text-secondary">{item.category}</p>
-                                                <Link href={`/product/${item.id}`} className="font-semibold text-secondary text-sm md:text-base hover:text-primary transition-colors line-clamp-1">
-                                                    {item.name}
-                                                </Link>
-                                            </div>
-                                            <button
-                                                onClick={() => handleRemove(item)}
-                                                className="text-gray-400 hover:text-danger transition-colors p-1 cursor-pointer flex-shrink-0"
-                                                title="Remove item"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-
-                                        <div className="flex items-end justify-between mt-3">
-                                            {/* Quantity Controls */}
-                                            <div className="flex items-center gap-1">
+                                        {/* Details */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start gap-2">
+                                                <div>
+                                                    <p className="text-xs text-text-secondary">{item.category?.name || item.category}</p>
+                                                    <Link href={`/products/${itemId}`} className="font-semibold text-secondary text-sm md:text-base hover:text-primary transition-colors line-clamp-1">
+                                                        {item.name}
+                                                    </Link>
+                                                </div>
                                                 <button
-                                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                    disabled={item.quantity <= 1}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    onClick={() => handleRemove(item)}
+                                                    className="text-gray-400 hover:text-danger transition-colors p-1 cursor-pointer flex-shrink-0"
+                                                    title="Remove item"
                                                 >
-                                                    <Minus className="w-3 h-3" />
-                                                </button>
-                                                <span className="w-10 h-8 flex items-center justify-center text-sm font-semibold text-secondary bg-gray-50 rounded-lg">
-                                                    {item.quantity}
-                                                </span>
-                                                <button
-                                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer"
-                                                >
-                                                    <Plus className="w-3 h-3" />
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
 
-                                            {/* Item Total */}
-                                            <div className="text-right">
-                                                {item.quantity > 1 && (
-                                                    <p className="text-xs text-text-secondary">Rs. {item.price} × {item.quantity}</p>
-                                                )}
-                                                <p className="text-primary font-bold text-base md:text-lg">
-                                                    Rs. {item.price * item.quantity}
-                                                </p>
+                                            <div className="flex items-end justify-between mt-3">
+                                                {/* Quantity Controls */}
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        onClick={() => updateQuantity(itemId, item.quantity - 1)}
+                                                        disabled={item.quantity <= 1}
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >
+                                                        <Minus className="w-3 h-3" />
+                                                    </button>
+                                                    <span className="w-10 h-8 flex items-center justify-center text-sm font-semibold text-secondary bg-gray-50 rounded-lg">
+                                                        {item.quantity}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => updateQuantity(itemId, item.quantity + 1)}
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+
+                                                {/* Item Total */}
+                                                <div className="text-right">
+                                                    {item.quantity > 1 && (
+                                                        <p className="text-xs text-text-secondary">Rs. {item.price} × {item.quantity}</p>
+                                                    )}
+                                                    <p className="text-primary font-bold text-base md:text-lg">
+                                                        Rs. {item.price * item.quantity}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {/* Continue Shopping */}

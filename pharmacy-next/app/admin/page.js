@@ -1,69 +1,132 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import Link from 'next/link'
-import { Package, ShoppingCart, TrendingUp, Users, ChevronRight, ArrowUpRight, Truck } from 'lucide-react'
+import { Package, ShoppingCart, TrendingUp, Users, ChevronRight, ArrowUpRight, Truck, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-// Mock dashboard data
-const stats = [
-    {
-        label: 'Total Orders',
-        value: '156',
-        change: '+12%',
-        trend: 'up',
-        icon: ShoppingCart,
-        color: 'bg-primary/10 text-primary',
-    },
-    {
-        label: 'Revenue',
-        value: 'Rs. 245K',
-        change: '+8%',
-        trend: 'up',
-        icon: TrendingUp,
-        color: 'bg-success/10 text-success',
-    },
-    {
-        label: 'Pending',
-        value: '23',
-        change: '5 new',
-        trend: 'neutral',
-        icon: Package,
-        color: 'bg-warning/10 text-warning',
-    },
-    {
-        label: 'Products',
-        value: '89',
-        change: '+3',
-        trend: 'up',
-        icon: Users,
-        color: 'bg-purple-100 text-purple-600',
-    },
-]
-
-const recentOrders = [
-    { id: 'ORD-847291', customer: 'Muhammad Ali', total: 2350, status: 'pending', date: '24 Feb', method: 'COD' },
-    { id: 'ORD-847156', customer: 'Sara Ahmed', total: 1875, status: 'confirmed', date: '24 Feb', method: 'COD' },
-    { id: 'ORD-846990', customer: 'Hassan Khan', total: 980, status: 'shipped', date: '23 Feb', method: 'COD' },
-    { id: 'ORD-846801', customer: 'Ayesha Malik', total: 3200, status: 'delivered', date: '23 Feb', method: 'COD' },
-    { id: 'ORD-846650', customer: 'Usman Tariq', total: 550, status: 'delivered', date: '22 Feb', method: 'COD' },
-]
 
 const statusConfig = {
     pending: { label: 'Pending', color: 'bg-warning/10 text-warning' },
     confirmed: { label: 'Confirmed', color: 'bg-blue-50 text-blue-600' },
+    processing: { label: 'Processing', color: 'bg-blue-50 text-blue-600' },
     shipped: { label: 'Shipped', color: 'bg-purple-50 text-purple-600' },
     delivered: { label: 'Delivered', color: 'bg-success/10 text-success' },
+    cancelled: { label: 'Cancelled', color: 'bg-danger/10 text-danger' },
 }
 
 export default function AdminDashboard() {
     const [deliveryFee, setDeliveryFee] = useState('150')
+    const [isSavingFee, setIsSavingFee] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const [dashboardData, setDashboardData] = useState({
+        stats: {
+            totalOrders: 0,
+            totalRevenue: 0,
+            pendingOrders: 0,
+            totalProducts: 0,
+            totalUsers: 0
+        },
+        recentOrders: []
+    })
 
-    const handleSaveDelivery = () => {
-        toast.success(`Delivery charges updated to Rs. ${deliveryFee}`, {
-            style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
-        })
+    const fetchDashboardData = async () => {
+        try {
+            setIsLoading(true)
+
+            // Fetch Stats and Recent Orders
+            const statsRes = await fetch('/api/admin/stats')
+            const statsData = await statsRes.json()
+            if (statsRes.ok) {
+                setDashboardData(statsData)
+            }
+
+            // Fetch Settings (Delivery Fee)
+            const settingsRes = await fetch('/api/admin/settings')
+            const settingsData = await settingsRes.json()
+            if (settingsRes.ok && settingsData.settings?.delivery_fee) {
+                setDeliveryFee(settingsData.settings.delivery_fee.toString())
+            }
+
+        } catch (error) {
+            console.error('Fetch dashboard error:', error)
+            toast.error('Failed to load dashboard data')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchDashboardData()
+    }, [])
+
+    const handleSaveDelivery = async () => {
+        try {
+            setIsSavingFee(true)
+            const res = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'delivery_fee', value: parseFloat(deliveryFee) })
+            })
+
+            if (res.ok) {
+                toast.success(`Delivery charges updated to Rs. ${deliveryFee}`, {
+                    style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
+                })
+            } else {
+                throw new Error('Failed to save')
+            }
+        } catch (error) {
+            toast.error('Failed to update delivery charges')
+        } finally {
+            setIsSavingFee(false)
+        }
+    }
+
+    const { stats, recentOrders } = dashboardData
+
+    const statCards = [
+        {
+            label: 'Total Orders',
+            value: stats.totalOrders.toString(),
+            change: '',
+            trend: 'neutral',
+            icon: ShoppingCart,
+            color: 'bg-primary/10 text-primary',
+        },
+        {
+            label: 'Revenue',
+            value: `Rs. ${stats.totalRevenue.toLocaleString()}`,
+            change: '',
+            trend: 'neutral',
+            icon: TrendingUp,
+            color: 'bg-success/10 text-success',
+        },
+        {
+            label: 'Pending',
+            value: stats.pendingOrders.toString(),
+            change: '',
+            trend: 'neutral',
+            icon: Package,
+            color: 'bg-warning/10 text-warning',
+        },
+        {
+            label: 'Products',
+            value: stats.totalProducts.toString(),
+            change: '',
+            trend: 'neutral',
+            icon: Package,
+            color: 'bg-purple-100 text-purple-600',
+        },
+    ]
+
+    if (isLoading) {
+        return (
+            <div className="min-h-[400px] flex flex-col items-center justify-center text-text-secondary">
+                <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                <p className="text-sm">Loading dashboard data...</p>
+            </div>
+        )
     }
 
     return (
@@ -76,7 +139,7 @@ export default function AdminDashboard() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                {stats.map((stat) => {
+                {statCards.map((stat) => {
                     const Icon = stat.icon
                     return (
                         <div key={stat.label} className="bg-white rounded-xl border border-border p-4 sm:p-5">
@@ -120,9 +183,11 @@ export default function AdminDashboard() {
                     </div>
                     <button
                         onClick={handleSaveDelivery}
-                        className="bg-primary hover:bg-primary-dark text-white text-sm font-semibold py-2.5 px-5 rounded-xl transition-all cursor-pointer active:scale-[0.98]"
+                        disabled={isSavingFee}
+                        className="bg-primary hover:bg-primary-dark text-white text-sm font-semibold py-2.5 px-5 rounded-xl transition-all cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                        Save
+                        {isSavingFee && <Loader2 className="w-4 h-4 animate-spin" />}
+                        {isSavingFee ? 'Saving...' : 'Save'}
                     </button>
                 </div>
             </div>

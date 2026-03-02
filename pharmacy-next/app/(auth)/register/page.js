@@ -5,9 +5,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useAuth } from '@/context/AuthContext'
+
+import Image from 'next/image'
 
 export default function RegisterPage() {
     const router = useRouter()
+    const { login } = useAuth()
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [formData, setFormData] = useState({
@@ -47,12 +51,40 @@ export default function RegisterPage() {
         if (!validate()) return
 
         setIsLoading(true)
-        await new Promise(r => setTimeout(r, 1500))
-        toast.success('Account created successfully!', {
-            style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
-        })
-        setIsLoading(false)
-        // router.push('/account')
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.fullName,
+                    email: formData.email,
+                    phone: formData.phone,
+                    password: formData.password,
+                }),
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Registration failed')
+            }
+
+            toast.success('Account created successfully!', {
+                style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
+            })
+
+            // Update Auth Context
+            login(data.user)
+
+            router.push('/account')
+            router.refresh()
+        } catch (error) {
+            toast.error(error.message, {
+                style: { borderRadius: '10px', background: '#ff4b4b', color: '#fff', fontSize: '14px' },
+            })
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     const update = (field, value) => {
@@ -84,9 +116,18 @@ export default function RegisterPage() {
 
                 {/* Branding */}
                 <div className="text-center mb-6">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg mb-4">
-                        <span className="text-white text-2xl font-bold">H+</span>
-                    </div>
+                    <Link href="/" className="inline-flex items-center justify-center mb-6">
+                        <div className="overflow-hidden" style={{ clipPath: 'inset(2% 0 2% 0)' }}>
+                            <Image
+                                src="/images/logo.png"
+                                alt="Hope Pharmacy"
+                                width={160}
+                                height={60}
+                                className="h-16 w-auto object-contain"
+                                priority
+                            />
+                        </div>
+                    </Link>
                     <h1 className="text-2xl font-extrabold text-secondary">Create Account</h1>
                     <p className="text-text-secondary text-sm mt-1">Join Hope Pharmacy for a better experience</p>
                 </div>
