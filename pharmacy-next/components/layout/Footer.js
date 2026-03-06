@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Facebook, Instagram, Twitter, Phone, Mail, MapPin } from 'lucide-react'
+import { Facebook, Instagram, Phone, Mail, MapPin } from 'lucide-react'
 
 const Footer = () => {
     return (
@@ -83,10 +83,26 @@ const Footer = () => {
                                 <span className="text-[11px] leading-tight">Abid road Islam nagar main Walton Lahore Cantt</span>
                             </li>
                         </ul>
-                        <div className="flex gap-4 mt-4">
-                            <a href="#" className="hover:text-primary transition"><Facebook className="w-5 h-5" /></a>
-                            <a href="#" className="hover:text-primary transition"><Instagram className="w-5 h-5" /></a>
-                            <a href="#" className="hover:text-primary transition"><Twitter className="w-5 h-5" /></a>
+                        <div className="flex gap-4 mt-6">
+                            <a
+                                href="https://www.facebook.com/share/1GYUUmXn8n/?mibextid=wwXIfr"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary hover:scale-110 transition-all duration-300"
+                                aria-label="Facebook"
+                            >
+                                <Facebook className="w-5 h-5" />
+                            </a>
+
+                            <a
+                                href="https://www.instagram.com/thehopepharmacylhr?utm_source=qr&igsh=MWoyOTVyYzYyMnVwMQ%3D%3D"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary hover:scale-110 transition-all duration-300"
+                                aria-label="Instagram"
+                            >
+                                <Instagram className="w-5 h-5" />
+                            </a>
                         </div>
                     </div>
                 </div>

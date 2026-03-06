@@ -29,7 +29,8 @@ const PrescriptionBanner = () => {
                         </p>
 
                         <a
-                            href="https://wa.me/923314673456"
+                            href="https://wa.me/923054964343
+"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 md:gap-3 bg-[#10b981] hover:bg-[#059669] text-white px-8 md:px-12 py-3 md:py-5 rounded-lg md:rounded-xl shadow-2xl transition-all hover:scale-105 active:scale-95 font-bold md:font-black text-xs md:text-2xl group"
