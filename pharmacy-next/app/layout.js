@@ -21,11 +21,7 @@ export const metadata = {
   verification: {
     google: "viHB6Gct2hgadbVfgUUivnj56jqSCP3gXQi0zS-qZHY",
   },
-  icons: {
-    icon: "/images/logo.png",
-    shortcut: "/images/logo.png",
-    apple: "/images/logo.png",
-  },
+  // Next.js will automatically find icon.png in the app directory
   openGraph: {
     title: "Hope Pharmacy - Genuine Medicines & Healthcare",
     description: "Pakistan's Premium Pharmacy. Your trusted partner for genuine medicines, delivered to your doorstep.",
