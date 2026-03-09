@@ -18,8 +18,9 @@ export async function GET(request) {
         const page = parseInt(searchParams.get('page')) || 1
         const limit = parseInt(searchParams.get('limit')) || 12
 
-        // Build filter query
-        const filter = { isActive: true }
+        // Build filter query — admin sees all products, public sees only active
+        const isAdmin = searchParams.get('admin') === 'true'
+        const filter = isAdmin ? {} : { isActive: true }
 
         if (category) {
             // Find category by slug
