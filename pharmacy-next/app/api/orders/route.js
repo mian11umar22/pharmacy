@@ -15,6 +15,7 @@ export async function GET(request) {
         const page = parseInt(searchParams.get('page')) || 1
         const limit = parseInt(searchParams.get('limit')) || 10
         const status = searchParams.get('status')
+        const dateFilter = searchParams.get('dateFilter')
 
         // Build filter
         const filter = {}
@@ -22,6 +23,23 @@ export async function GET(request) {
             filter.user = auth.user._id
         }
         if (status) filter.status = status
+
+        // Date filter
+        if (dateFilter) {
+            const now = new Date()
+            if (dateFilter === 'today') {
+                const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+                filter.createdAt = { $gte: start }
+            } else if (dateFilter === 'week') {
+                const start = new Date(now)
+                start.setDate(now.getDate() - 7)
+                filter.createdAt = { $gte: start }
+            } else if (dateFilter === 'month') {
+                const start = new Date(now)
+                start.setDate(now.getDate() - 30)
+                filter.createdAt = { $gte: start }
+            }
+        }
 
         const skip = (page - 1) * limit
         const total = await Order.countDocuments(filter)

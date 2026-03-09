@@ -39,10 +39,15 @@ export async function GET(request) {
         // Sort options
         const sortOptions = {
             'newest': { createdAt: -1 },
+            'oldest': { createdAt: 1 },
             'price-low': { price: 1 },
             'price-high': { price: -1 },
             'discount': { discount: -1 },
             'popular': { createdAt: -1 },
+            'name-asc': { name: 1 },
+            'name-desc': { name: -1 },
+            'stock-low': { stock: 1 },
+            'stock-high': { stock: -1 },
         }
 
         const skip = (page - 1) * limit

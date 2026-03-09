@@ -38,6 +38,7 @@ export default function AdminCategoriesPage() {
     // Edit state
     const [editingId, setEditingId] = useState(null)
     const [editName, setEditName] = useState('')
+    const [editIsFeatured, setEditIsFeatured] = useState(false)
 
     // Fetch categories on mount
     const fetchCategories = async () => {
@@ -94,7 +95,7 @@ export default function AdminCategoriesPage() {
             const res = await fetch(`/api/categories/${catId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: editName.trim() })
+                body: JSON.stringify({ name: editName.trim(), isFeatured: editIsFeatured })
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error)
@@ -428,21 +429,32 @@ export default function AdminCategoriesPage() {
                         {categories.map((cat) => (
                             <div key={cat._id} className="px-4 sm:px-5 py-3 hover:bg-gray-50 transition-colors">
                                 {editingId === cat._id ? (
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            value={editName}
-                                            onChange={(e) => setEditName(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleEditCategory(cat._id)}
-                                            className="flex-1 px-3 py-1.5 rounded-lg border border-primary bg-background text-sm focus:outline-none"
-                                            autoFocus
-                                        />
-                                        <button onClick={() => handleEditCategory(cat._id)} className="text-success cursor-pointer">
-                                            <Check className="w-4.5 h-4.5" />
-                                        </button>
-                                        <button onClick={() => setEditingId(null)} className="text-gray-400 cursor-pointer">
-                                            <X className="w-4.5 h-4.5" />
-                                        </button>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={editName}
+                                                onChange={(e) => setEditName(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleEditCategory(cat._id)}
+                                                className="flex-1 px-3 py-1.5 rounded-lg border border-primary bg-background text-sm focus:outline-none"
+                                                autoFocus
+                                            />
+                                            <button onClick={() => handleEditCategory(cat._id)} className="text-success cursor-pointer">
+                                                <Check className="w-4.5 h-4.5" />
+                                            </button>
+                                            <button onClick={() => setEditingId(null)} className="text-gray-400 cursor-pointer">
+                                                <X className="w-4.5 h-4.5" />
+                                            </button>
+                                        </div>
+                                        <label className="flex items-center gap-2 text-xs font-medium text-text-secondary cursor-pointer select-none ml-1">
+                                            <input
+                                                type="checkbox"
+                                                checked={editIsFeatured}
+                                                onChange={(e) => setEditIsFeatured(e.target.checked)}
+                                                className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
+                                            />
+                                            Show on Homepage
+                                        </label>
                                     </div>
                                 ) : (
                                     <div
@@ -466,7 +478,7 @@ export default function AdminCategoriesPage() {
                                         {/* Actions */}
                                         <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                             <button
-                                                onClick={() => { setEditingId(cat._id); setEditName(cat.name) }}
+                                                onClick={() => { setEditingId(cat._id); setEditName(cat.name); setEditIsFeatured(cat.isFeatured || false) }}
                                                 className="text-text-secondary hover:text-primary transition-colors cursor-pointer p-1.5"
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />

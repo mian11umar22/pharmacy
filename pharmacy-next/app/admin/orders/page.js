@@ -14,23 +14,34 @@ const statusConfig = {
     cancelled: { label: 'Cancelled', color: 'bg-danger/10 text-danger', dot: 'bg-danger' },
 }
 
-const filterTabs = ['All', 'Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled']
+const statusTabs = ['All', 'Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled']
+
+const dateTabs = [
+    { label: 'All Time', value: '' },
+    { label: 'Today', value: 'today' },
+    { label: 'This Week', value: 'week' },
+    { label: 'This Month', value: 'month' },
+]
 
 export default function AdminOrdersPage() {
-    const [activeFilter, setActiveFilter] = useState('All')
+    const [activeStatus, setActiveStatus] = useState('All')
+    const [activeDateFilter, setActiveDateFilter] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [orders, setOrders] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [totalOrders, setTotalOrders] = useState(0)
 
-    const fetchOrders = useCallback(async () => {
+    const fetchOrders = useCallback(async (status = 'All', dateFilter = '') => {
         try {
             setIsLoading(true)
-            const statusParam = activeFilter !== 'All' ? `&status=${activeFilter.toLowerCase()}` : ''
-            const res = await fetch(`/api/orders?limit=100${statusParam}`)
+            const params = new URLSearchParams()
+            params.set('limit', '100')
+            if (status !== 'All') params.set('status', status.toLowerCase())
+            if (dateFilter) params.set('dateFilter', dateFilter)
+
+            const res = await fetch(`/api/orders?${params.toString()}`)
             const data = await res.json()
             if (res.ok) {
-                // Map the data to match the UI expectations
                 const mappedOrders = (data.orders || []).map(o => ({
                     id: o.orderNumber || o._id,
                     realId: o._id,
@@ -51,17 +62,30 @@ export default function AdminOrdersPage() {
         } finally {
             setIsLoading(false)
         }
-    }, [activeFilter])
+    }, [])
 
     useEffect(() => {
-        fetchOrders()
+        fetchOrders('All', '')
     }, [fetchOrders])
 
+    const handleStatusChange = (status) => {
+        setActiveStatus(status)
+        fetchOrders(status, activeDateFilter)
+    }
+
+    const handleDateChange = (dateFilter) => {
+        setActiveDateFilter(dateFilter)
+        fetchOrders(activeStatus, dateFilter)
+    }
+
+    // Client-side search filter on loaded orders
     const filtered = orders.filter((order) => {
-        const matchesSearch = !searchQuery ||
+        if (!searchQuery) return true
+        return (
             order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            order.customer.toLowerCase().includes(searchQuery.toLowerCase())
-        return matchesSearch
+            order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            order.phone.includes(searchQuery)
+        )
     })
 
     return (
@@ -69,7 +93,9 @@ export default function AdminOrdersPage() {
             {/* Header */}
             <div className="mb-5">
                 <h1 className="text-xl sm:text-2xl font-bold text-secondary">Orders</h1>
-                <p className="text-sm text-text-secondary mt-1">{totalOrders} total orders</p>
+                <p className="text-sm text-text-secondary mt-1">
+                    {isLoading ? 'Loading...' : `${filtered.length} orders${activeDateFilter || activeStatus !== 'All' ? ' (filtered)' : ` · ${totalOrders} total`}`}
+                </p>
             </div>
 
             {/* Search */}
@@ -77,31 +103,47 @@ export default function AdminOrdersPage() {
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                     type="text"
-                    placeholder="Search by order ID or customer..."
+                    placeholder="Search by order ID, customer or phone..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
             </div>
 
-            {/* Filter Tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
-                {filterTabs.map((tab) => {
-                    const count = tab === 'All' ? totalOrders : orders.filter(o => o.status === tab.toLowerCase()).length;
+            {/* Date Filter Tabs */}
+            <div className="flex flex-wrap gap-2 mb-3">
+                {dateTabs.map((tab) => (
+                    <button
+                        key={tab.value}
+                        onClick={() => handleDateChange(tab.value)}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${activeDateFilter === tab.value
+                            ? 'bg-secondary text-white border-secondary shadow-sm'
+                            : 'bg-white border-border text-text-secondary hover:border-secondary hover:text-secondary'
+                            }`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Status Filter Tabs */}
+            <div className="flex flex-wrap gap-2 mb-4">
+                {statusTabs.map((tab) => {
+                    const count = tab === 'All'
+                        ? orders.length
+                        : orders.filter(o => o.status === tab.toLowerCase()).length
                     return (
                         <button
                             key={tab}
-                            onClick={() => setActiveFilter(tab)}
-                            className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeFilter === tab
+                            onClick={() => handleStatusChange(tab)}
+                            className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeStatus === tab
                                 ? 'bg-primary text-white shadow-sm'
                                 : 'bg-white border border-border text-text-secondary hover:border-primary hover:text-primary'
                                 }`}
                         >
                             {tab}
                             {tab !== 'All' && (
-                                <span className="ml-1.5 opacity-70">
-                                    ({count})
-                                </span>
+                                <span className="ml-1.5 opacity-70">({count})</span>
                             )}
                         </button>
                     )

@@ -2,29 +2,59 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 
 const PRODUCTS_PER_PAGE = 20
 
+const SORT_OPTIONS = [
+    { value: 'newest', label: 'Newest First' },
+    { value: 'oldest', label: 'Oldest First' },
+    { value: 'price-low', label: 'Price: Low → High' },
+    { value: 'price-high', label: 'Price: High → Low' },
+    { value: 'name-asc', label: 'Name: A → Z' },
+    { value: 'name-desc', label: 'Name: Z → A' },
+    { value: 'stock-low', label: 'Stock: Low → High' },
+    { value: 'stock-high', label: 'Stock: High → Low' },
+]
+
 export default function AdminProductsPage() {
     const [products, setProducts] = useState([])
+    const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const [totalProducts, setTotalProducts] = useState(0)
+    const [selectedCategory, setSelectedCategory] = useState('')
+    const [sortBy, setSortBy] = useState('newest')
 
     const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE)
 
-    const fetchProducts = useCallback(async (page = 1, search = '') => {
+    // Fetch categories for the filter dropdown
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch('/api/categories')
+                const data = await res.json()
+                if (res.ok) setCategories(data.categories || [])
+            } catch (error) {
+                console.error('Failed to load categories')
+            }
+        }
+        fetchCategories()
+    }, [])
+
+    const fetchProducts = useCallback(async (page = 1, search = '', category = '', sort = 'newest') => {
         try {
             setLoading(true)
             const params = new URLSearchParams()
             params.set('page', page.toString())
             params.set('limit', PRODUCTS_PER_PAGE.toString())
             params.set('admin', 'true')
+            params.set('sort', sort)
             if (search) params.set('search', search)
+            if (category) params.set('category', category)
 
             const res = await fetch(`/api/products?${params.toString()}`)
             const data = await res.json()
@@ -41,22 +71,36 @@ export default function AdminProductsPage() {
 
     // Initial load
     useEffect(() => {
-        fetchProducts(1, '')
+        fetchProducts(1, '', '', 'newest')
     }, [fetchProducts])
 
     // Search with debounce — resets to page 1
     useEffect(() => {
         const timer = setTimeout(() => {
             setCurrentPage(1)
-            fetchProducts(1, searchQuery)
+            fetchProducts(1, searchQuery, selectedCategory, sortBy)
         }, 400)
         return () => clearTimeout(timer)
-    }, [searchQuery, fetchProducts])
+    }, [searchQuery, fetchProducts]) // eslint-disable-line
+
+    // Category filter change
+    const handleCategoryChange = (cat) => {
+        setSelectedCategory(cat)
+        setCurrentPage(1)
+        fetchProducts(1, searchQuery, cat, sortBy)
+    }
+
+    // Sort change
+    const handleSortChange = (sort) => {
+        setSortBy(sort)
+        setCurrentPage(1)
+        fetchProducts(1, searchQuery, selectedCategory, sort)
+    }
 
     const handlePageChange = (page) => {
         if (page < 1 || page > totalPages) return
         setCurrentPage(page)
-        fetchProducts(page, searchQuery)
+        fetchProducts(page, searchQuery, selectedCategory, sortBy)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
@@ -66,14 +110,13 @@ export default function AdminProductsPage() {
             const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
             if (!res.ok) throw new Error('Delete failed')
             toast.success('Product deleted', { style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' } })
-            // Refresh current page after delete
-            fetchProducts(currentPage, searchQuery)
+            fetchProducts(currentPage, searchQuery, selectedCategory, sortBy)
         } catch (error) {
             toast.error(error.message)
         }
     }
 
-    // Pagination page numbers logic (show max 5 page buttons)
+    // Pagination page numbers (max 5 shown)
     const getPageNumbers = () => {
         const pages = []
         let start = Math.max(1, currentPage - 2)
@@ -101,17 +144,64 @@ export default function AdminProductsPage() {
                 </Link>
             </div>
 
-            {/* Search */}
-            <div className="relative mb-4">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                />
+            {/* Search + Filters Row */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                {/* Search */}
+                <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                </div>
+
+                {/* Category Filter */}
+                <select
+                    value={selectedCategory}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
+                    className="px-3 py-2.5 rounded-xl border border-border bg-white text-sm text-secondary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary min-w-[160px] cursor-pointer"
+                >
+                    <option value="">All Categories</option>
+                    {categories.map((cat) => (
+                        <option key={cat._id} value={cat.slug}>{cat.name}</option>
+                    ))}
+                </select>
+
+                {/* Sort */}
+                <div className="relative">
+                    <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                    <select
+                        value={sortBy}
+                        onChange={(e) => handleSortChange(e.target.value)}
+                        className="pl-8 pr-3 py-2.5 rounded-xl border border-border bg-white text-sm text-secondary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary min-w-[170px] cursor-pointer"
+                    >
+                        {SORT_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
+
+            {/* Active filters indicator */}
+            {(selectedCategory || searchQuery) && (
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    {selectedCategory && (
+                        <span className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary font-semibold px-3 py-1 rounded-full">
+                            {categories.find(c => c.slug === selectedCategory)?.name || selectedCategory}
+                            <button onClick={() => handleCategoryChange('')} className="hover:text-primary-dark cursor-pointer">✕</button>
+                        </span>
+                    )}
+                    {searchQuery && (
+                        <span className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary font-semibold px-3 py-1 rounded-full">
+                            &quot;{searchQuery}&quot;
+                            <button onClick={() => setSearchQuery('')} className="hover:text-primary-dark cursor-pointer">✕</button>
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* Mobile Cards */}
             <div className="sm:hidden space-y-3">
@@ -125,13 +215,7 @@ export default function AdminProductsPage() {
                             <div className="flex items-start gap-3">
                                 <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
                                     {product.image ? (
-                                        <Image
-                                            src={product.image}
-                                            alt=""
-                                            width={48}
-                                            height={48}
-                                            className="w-full h-full object-cover"
-                                        />
+                                        <Image src={product.image} alt="" width={48} height={48} className="w-full h-full object-cover" />
                                     ) : '💊'}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -149,16 +233,10 @@ export default function AdminProductsPage() {
                                 </div>
                             </div>
                             <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                                <Link
-                                    href={`/admin/products/new?edit=${product._id}`}
-                                    className="flex items-center gap-1 text-xs text-text-secondary hover:text-primary font-medium cursor-pointer"
-                                >
+                                <Link href={`/admin/products/new?edit=${product._id}`} className="flex items-center gap-1 text-xs text-text-secondary hover:text-primary font-medium cursor-pointer">
                                     <Pencil className="w-3.5 h-3.5" /> Edit
                                 </Link>
-                                <button
-                                    onClick={() => handleDelete(product._id)}
-                                    className="flex items-center gap-1 text-xs text-text-secondary hover:text-danger font-medium cursor-pointer"
-                                >
+                                <button onClick={() => handleDelete(product._id)} className="flex items-center gap-1 text-xs text-text-secondary hover:text-danger font-medium cursor-pointer">
                                     <Trash2 className="w-3.5 h-3.5" /> Delete
                                 </button>
                             </div>
@@ -195,13 +273,7 @@ export default function AdminProductsPage() {
                                     <td className="px-5 py-3.5">
                                         <div className="flex items-center gap-3">
                                             {product.image ? (
-                                                <Image
-                                                    src={product.image}
-                                                    alt=""
-                                                    width={32}
-                                                    height={32}
-                                                    className="w-8 h-8 rounded-lg object-cover"
-                                                />
+                                                <Image src={product.image} alt="" width={32} height={32} className="w-8 h-8 rounded-lg object-cover" />
                                             ) : (
                                                 <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-sm flex-shrink-0">💊</div>
                                             )}
@@ -226,16 +298,10 @@ export default function AdminProductsPage() {
                                     </td>
                                     <td className="px-5 py-3.5">
                                         <div className="flex items-center gap-3 justify-center">
-                                            <Link
-                                                href={`/admin/products/new?edit=${product._id}`}
-                                                className="text-text-secondary hover:text-primary transition-colors"
-                                            >
+                                            <Link href={`/admin/products/new?edit=${product._id}`} className="text-text-secondary hover:text-primary transition-colors">
                                                 <Pencil className="w-4 h-4" />
                                             </Link>
-                                            <button
-                                                onClick={() => handleDelete(product._id)}
-                                                className="text-text-secondary hover:text-danger transition-colors cursor-pointer"
-                                            >
+                                            <button onClick={() => handleDelete(product._id)} className="text-text-secondary hover:text-danger transition-colors cursor-pointer">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
@@ -258,7 +324,6 @@ export default function AdminProductsPage() {
             {/* Pagination */}
             {!loading && totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-6">
-                    {/* Prev */}
                     <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
@@ -267,7 +332,6 @@ export default function AdminProductsPage() {
                         <ChevronLeft className="w-4 h-4" />
                     </button>
 
-                    {/* Page Numbers */}
                     {getPageNumbers().map(page => (
                         <button
                             key={page}
@@ -281,7 +345,6 @@ export default function AdminProductsPage() {
                         </button>
                     ))}
 
-                    {/* Next */}
                     <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
@@ -290,7 +353,6 @@ export default function AdminProductsPage() {
                         <ChevronRight className="w-4 h-4" />
                     </button>
 
-                    {/* Page info */}
                     <span className="text-xs text-text-secondary ml-2">
                         Page {currentPage} of {totalPages}
                     </span>
