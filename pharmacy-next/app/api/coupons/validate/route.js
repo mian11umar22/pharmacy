@@ -32,7 +32,7 @@ export async function POST(request) {
 
         if (coupon.minCartValue > 0 && cartTotal < coupon.minCartValue) {
             return NextResponse.json({
-                error: `Minimum cart total of Rs. ${coupon.minCartValue} required for this coupon`
+                error: `Minimum product total of Rs. ${coupon.minCartValue} required for this coupon (delivery charges not included)`
             }, { status: 400 })
         }
 

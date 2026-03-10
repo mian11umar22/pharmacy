@@ -241,7 +241,7 @@ export default function AdminCouponsPage() {
                         {/* Min Cart Value */}
                         <div>
                             <label className="block text-xs font-semibold text-secondary mb-1.5">
-                                Min Cart Value <span className="text-text-secondary font-normal">(optional, Rs.)</span>
+                                Min Products Total <span className="text-text-secondary font-normal">(optional, Rs. — delivery excluded)</span>
                             </label>
                             <input
                                 type="number"
