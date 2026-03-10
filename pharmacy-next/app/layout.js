@@ -39,6 +39,11 @@ export const metadata = {
   },
 };
 
+// =============================================
+// DEVELOPER CONTROL: Change to true to lock website, false to unlock
+const WEBSITE_LOCKED = false;
+// =============================================
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
@@ -84,12 +89,49 @@ export default function RootLayout({ children }) {
             })
           }}
         />
-        <AuthProvider>
-          <CartProvider>
-            {children}
-            <Toaster position="bottom-right" />
-          </CartProvider>
-        </AuthProvider>
+        {WEBSITE_LOCKED ? (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: '#000',
+            zIndex: 99999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            fontFamily: 'sans-serif',
+            textAlign: 'center',
+            padding: '2rem',
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+            <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Website Access Locked</h1>
+            <p style={{ color: '#aaa', marginBottom: '2rem', maxWidth: '500px' }}>
+              This website is currently inactive. Please contact the developer to activate it.
+            </p>
+            <div style={{
+              background: '#111',
+              border: '1px solid #333',
+              borderRadius: '12px',
+              padding: '1.5rem 2rem',
+              maxWidth: '400px',
+              width: '100%',
+            }}>
+              <p style={{ color: '#aaa', marginBottom: '1rem', fontSize: '0.9rem' }}>Contact Developer</p>
+              <p style={{ marginBottom: '0.5rem' }}>📱 WhatsApp: <strong>0309-4399601</strong></p>
+              <p style={{ color: '#aaa', fontSize: '0.85rem', marginTop: '1rem' }}>
+                After payment, your website will be activated.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <AuthProvider>
+            <CartProvider>
+              {children}
+              <Toaster position="bottom-right" />
+            </CartProvider>
+          </AuthProvider>
+        )}
       </body>
     </html>
   );

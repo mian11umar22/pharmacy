@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import Order from '@/models/Order'
 import User from '@/models/User'
+import Coupon from '@/models/Coupon'
 import { requireAuth } from '@/lib/auth'
 import { sendOrderConfirmation, sendAdminNewOrderNotification } from '@/lib/email'
 
@@ -97,7 +98,17 @@ export async function POST(request) {
             shippingAddress: body.shippingAddress,
             paymentMethod: body.paymentMethod || 'cod',
             notes: body.notes || '',
+            couponCode: body.couponCode || null,
+            discountAmount: body.discountAmount || 0,
         })
+
+        // Increment coupon usedCount if a coupon was applied
+        if (body.couponCode) {
+            await Coupon.findOneAndUpdate(
+                { code: body.couponCode.toUpperCase() },
+                { $inc: { usedCount: 1 } }
+            ).catch(err => console.error('Coupon usedCount update error:', err))
+        }
 
         // Send emails (non-blocking)
         console.log(`🛒 Order created: ${order.orderNumber}. Sending notifications...`)

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Banknote, ArrowLeft, Loader2 } from 'lucide-react'
+import { ChevronRight, Banknote, ArrowLeft, Loader2, Tag, X } from 'lucide-react'
 import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -70,6 +70,12 @@ export default function CheckoutPage() {
     const [isHydrated, setIsHydrated] = useState(false)
     const [isRedirectingSuccess, setIsRedirectingSuccess] = useState(false)
 
+    // Coupon state
+    const [couponCode, setCouponCode] = useState('')
+    const [appliedCoupon, setAppliedCoupon] = useState(null) // { code, discountAmount, message }
+    const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
+    const [couponError, setCouponError] = useState('')
+
     // Hydration check
     useEffect(() => {
         setIsHydrated(true)
@@ -94,7 +100,40 @@ export default function CheckoutPage() {
 
     const subtotal = getCartTotal()
     const delivery = cartItems.length > 0 ? deliveryFee : 0
-    const total = subtotal + delivery
+    const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0
+    const total = subtotal + delivery - discountAmount
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) return
+        setCouponError('')
+        setIsApplyingCoupon(true)
+        try {
+            const res = await fetch('/api/coupons/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: couponCode.trim(), cartTotal: subtotal })
+            })
+            const data = await res.json()
+            if (res.ok) {
+                setAppliedCoupon({ code: data.coupon.code, discountAmount: data.discountAmount, message: data.message })
+                setCouponError('')
+                toast.success(data.message, { position: 'top-center' })
+            } else {
+                setAppliedCoupon(null)
+                setCouponError(data.error || 'Invalid coupon code')
+            }
+        } catch (error) {
+            setCouponError('Failed to apply coupon. Please try again.')
+        } finally {
+            setIsApplyingCoupon(false)
+        }
+    }
+
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null)
+        setCouponCode('')
+        setCouponError('')
+    }
 
     const {
         register,
@@ -155,6 +194,8 @@ export default function CheckoutPage() {
                     subtotal,
                     deliveryFee: delivery,
                     total,
+                    couponCode: appliedCoupon?.code || null,
+                    discountAmount: appliedCoupon?.discountAmount || 0,
                     shippingAddress: {
                         name: data.fullName,
                         email: data.email,
@@ -386,6 +427,54 @@ export default function CheckoutPage() {
                                 ))}
                             </div>
 
+                            {/* Coupon Code Input */}
+                            <div className="border-t border-border pt-4 mb-4">
+                                <p className="text-xs font-semibold text-secondary mb-2 flex items-center gap-1.5">
+                                    <Tag className="w-3.5 h-3.5 text-primary" />
+                                    Have a coupon code?
+                                </p>
+                                {appliedCoupon ? (
+                                    <div className="flex items-center justify-between bg-success/5 border border-success/20 rounded-xl px-3 py-2.5">
+                                        <div>
+                                            <p className="text-xs font-bold text-success">{appliedCoupon.message}</p>
+                                            <p className="text-xs text-text-secondary font-mono tracking-wider mt-0.5">{appliedCoupon.code}</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveCoupon}
+                                            className="text-text-secondary hover:text-danger transition-colors cursor-pointer"
+                                            title="Remove coupon"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={couponCode}
+                                            onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError('') }}
+                                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApplyCoupon())}
+                                            placeholder="Enter coupon code"
+                                            className={`flex-1 px-3 py-2 rounded-xl border ${couponError ? 'border-danger' : 'border-border'} text-sm font-mono uppercase focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background`}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleApplyCoupon}
+                                            disabled={isApplyingCoupon || !couponCode.trim()}
+                                            className="px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                        >
+                                            {isApplyingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Apply'}
+                                        </button>
+                                    </div>
+                                )}
+                                {couponError && (
+                                    <p className="text-danger text-xs mt-1.5 flex items-center gap-1">
+                                        <X className="w-3 h-3" /> {couponError}
+                                    </p>
+                                )}
+                            </div>
+
                             {/* Totals */}
                             <div className="border-t border-border pt-4 space-y-2 text-sm">
                                 <div className="flex justify-between">
@@ -396,6 +485,12 @@ export default function CheckoutPage() {
                                     <span className="text-text-secondary">Delivery</span>
                                     <span className="font-medium text-secondary">Rs. {delivery}</span>
                                 </div>
+                                {appliedCoupon && (
+                                    <div className="flex justify-between">
+                                        <span className="text-success font-medium">Discount</span>
+                                        <span className="font-semibold text-success">- Rs. {appliedCoupon.discountAmount}</span>
+                                    </div>
+                                )}
                                 <div className="border-t border-border pt-3 mt-3">
                                     <div className="flex justify-between">
                                         <span className="font-bold text-secondary text-base">Total</span>
@@ -434,6 +529,9 @@ export default function CheckoutPage() {
                     <div>
                         <p className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Total</p>
                         <p className="text-xl font-black text-primary">Rs. {total}</p>
+                        {appliedCoupon && (
+                            <p className="text-[10px] text-success font-semibold">Coupon: -{appliedCoupon.discountAmount}</p>
+                        )}
                     </div>
                     <button
                         type="button"
