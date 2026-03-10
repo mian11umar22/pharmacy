@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, ToggleLeft, ToggleRight, Tag, Loader2, X } from 'lucide-react'
+import { Plus, Trash2, ToggleLeft, ToggleRight, Tag, Loader2, X, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const emptyForm = {
@@ -19,6 +19,7 @@ export default function AdminCouponsPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [form, setForm] = useState(emptyForm)
+    const [editingCoupon, setEditingCoupon] = useState(null) // holds coupon being edited
     const [isSaving, setIsSaving] = useState(false)
     const [deletingId, setDeletingId] = useState(null)
     const [togglingId, setTogglingId] = useState(null)
@@ -43,35 +44,75 @@ export default function AdminCouponsPage() {
         setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
     }
 
+    const handleEdit = (coupon) => {
+        setEditingCoupon(coupon)
+        setForm({
+            code: coupon.code,
+            discountType: coupon.discountType,
+            discountValue: coupon.discountValue,
+            minCartValue: coupon.minCartValue || '',
+            maxUses: coupon.maxUses || '',
+            expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : '',
+            isActive: coupon.isActive,
+        })
+        setShowForm(true)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!form.code.trim()) return toast.error('Coupon code is required')
         if (!form.discountValue || Number(form.discountValue) <= 0) return toast.error('Discount value must be greater than 0')
         if (form.discountType === 'percentage' && Number(form.discountValue) > 100) return toast.error('Percentage cannot exceed 100')
 
+        const payload = {
+            ...form,
+            discountValue: Number(form.discountValue),
+            minCartValue: Number(form.minCartValue) || 0,
+            maxUses: Number(form.maxUses) || 0,
+            expiryDate: form.expiryDate || null,
+        }
+
         try {
             setIsSaving(true)
-            const res = await fetch('/api/coupons', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...form,
-                    discountValue: Number(form.discountValue),
-                    minCartValue: Number(form.minCartValue) || 0,
-                    maxUses: Number(form.maxUses) || 0,
-                    expiryDate: form.expiryDate || null,
+
+            if (editingCoupon) {
+                // UPDATE existing coupon
+                const res = await fetch(`/api/coupons/${editingCoupon._id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 })
-            })
-            const data = await res.json()
-            if (res.ok) {
-                toast.success(`Coupon "${data.coupon.code}" created!`, {
-                    style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
-                })
-                setForm(emptyForm)
-                setShowForm(false)
-                fetchCoupons()
+                const data = await res.json()
+                if (res.ok) {
+                    toast.success(`Coupon "${data.coupon.code}" updated!`, {
+                        style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
+                    })
+                    setForm(emptyForm)
+                    setEditingCoupon(null)
+                    setShowForm(false)
+                    fetchCoupons()
+                } else {
+                    toast.error(data.error || 'Failed to update coupon')
+                }
             } else {
-                toast.error(data.error || 'Failed to create coupon')
+                // CREATE new coupon
+                const res = await fetch('/api/coupons', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                const data = await res.json()
+                if (res.ok) {
+                    toast.success(`Coupon "${data.coupon.code}" created!`, {
+                        style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
+                    })
+                    setForm(emptyForm)
+                    setShowForm(false)
+                    fetchCoupons()
+                } else {
+                    toast.error(data.error || 'Failed to create coupon')
+                }
             }
         } catch (error) {
             toast.error('Something went wrong')
@@ -130,7 +171,7 @@ export default function AdminCouponsPage() {
                     <p className="text-sm text-text-secondary mt-1">Create and manage discount coupons</p>
                 </div>
                 <button
-                    onClick={() => { setShowForm(true); setForm(emptyForm) }}
+                    onClick={() => { setShowForm(true); setEditingCoupon(null); setForm(emptyForm) }}
                     className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition-all cursor-pointer active:scale-[0.98]"
                 >
                     <Plus className="w-4 h-4" />
@@ -142,8 +183,8 @@ export default function AdminCouponsPage() {
             {showForm && (
                 <div className="bg-white rounded-xl border border-border p-5 mb-6 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="font-bold text-secondary">New Coupon</h2>
-                        <button onClick={() => setShowForm(false)} className="text-text-secondary hover:text-secondary cursor-pointer">
+                        <h2 className="font-bold text-secondary">{editingCoupon ? 'Edit Coupon' : 'New Coupon'}</h2>
+                        <button onClick={() => { setShowForm(false); setEditingCoupon(null) }} className="text-text-secondary hover:text-secondary cursor-pointer">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -156,9 +197,11 @@ export default function AdminCouponsPage() {
                                 value={form.code}
                                 onChange={handleChange}
                                 placeholder="e.g. TALHA123"
-                                className="w-full px-3 py-2.5 rounded-lg border border-border text-sm font-mono font-semibold uppercase focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background"
+                                disabled={!!editingCoupon}
+                                className={`w-full px-3 py-2.5 rounded-lg border border-border text-sm font-mono font-semibold uppercase focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background ${editingCoupon ? 'opacity-60 cursor-not-allowed' : ''}`}
                                 style={{ textTransform: 'uppercase' }}
                             />
+                            {editingCoupon && <p className="text-xs text-text-secondary mt-1">Coupon code cannot be changed after creation</p>}
                         </div>
 
                         {/* Discount Type */}
@@ -265,7 +308,7 @@ export default function AdminCouponsPage() {
                                 className="bg-primary hover:bg-primary-dark text-white text-sm font-semibold py-2.5 px-6 rounded-xl transition-all cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                             >
                                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {isSaving ? 'Creating...' : 'Create Coupon'}
+                                {isSaving ? (editingCoupon ? 'Saving...' : 'Creating...') : (editingCoupon ? 'Save Changes' : 'Create Coupon')}
                             </button>
                             <button
                                 type="button"
@@ -318,6 +361,13 @@ export default function AdminCouponsPage() {
                                         {coupon.expiryDate && <span>Expires: {new Date(coupon.expiryDate).toLocaleDateString()}</span>}
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleEdit(coupon)}
+                                            className="flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3 rounded-lg border border-border hover:bg-gray-50 transition-all cursor-pointer"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5 text-primary" />
+                                            Edit
+                                        </button>
                                         <button
                                             onClick={() => handleToggle(coupon)}
                                             disabled={togglingId === coupon._id}
@@ -384,6 +434,13 @@ export default function AdminCouponsPage() {
                                             </td>
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleEdit(coupon)}
+                                                        title="Edit coupon"
+                                                        className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-all cursor-pointer"
+                                                    >
+                                                        <Pencil className="w-4 h-4" />
+                                                    </button>
                                                     <button
                                                         onClick={() => handleToggle(coupon)}
                                                         disabled={togglingId === coupon._id}
