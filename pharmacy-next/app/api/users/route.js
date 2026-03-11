@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
+import Order from '@/models/Order'
 import { requireAdmin } from '@/lib/auth'
 
-// GET /api/users — admin, get all users
+// GET /api/users — admin: get all users with order stats
 export async function GET(request) {
     try {
         const auth = await requireAdmin(request)
@@ -15,11 +16,12 @@ export async function GET(request) {
         const limit = parseInt(searchParams.get('limit')) || 20
         const search = searchParams.get('search')
 
-        const filter = {}
+        const filter = { role: 'customer' }
         if (search) {
             filter.$or = [
                 { name: { $regex: search, $options: 'i' } },
                 { email: { $regex: search, $options: 'i' } },
+                { phone: { $regex: search, $options: 'i' } },
             ]
         }
 
@@ -30,8 +32,34 @@ export async function GET(request) {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
+            .lean()
 
-        return NextResponse.json({ users, total, page, pages: Math.ceil(total / limit) })
+        // Get order stats for each user
+        const userIds = users.map(u => u._id)
+        const orderStats = await Order.aggregate([
+            { $match: { user: { $in: userIds } } },
+            {
+                $group: {
+                    _id: '$user',
+                    totalOrders: { $sum: 1 },
+                    totalSpent: { $sum: '$total' },
+                    lastOrderDate: { $max: '$createdAt' },
+                }
+            }
+        ])
+
+        // Map stats to users
+        const statsMap = {}
+        orderStats.forEach(s => { statsMap[s._id.toString()] = s })
+
+        const enrichedUsers = users.map(u => ({
+            ...u,
+            totalOrders: statsMap[u._id.toString()]?.totalOrders || 0,
+            totalSpent: statsMap[u._id.toString()]?.totalSpent || 0,
+            lastOrderDate: statsMap[u._id.toString()]?.lastOrderDate || null,
+        }))
+
+        return NextResponse.json({ users: enrichedUsers, total, page, pages: Math.ceil(total / limit) })
     } catch (error) {
         console.error('Get users error:', error)
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
