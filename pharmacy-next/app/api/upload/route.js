@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { uploadImage } from '@/lib/cloudinary'
-import { requireAdmin } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth'
 
-// POST /api/upload — admin, upload image to Cloudinary
+// POST /api/upload — authenticated users can upload images
 export async function POST(request) {
     try {
-        const auth = await requireAdmin(request)
+        const auth = await requireAuth(request)
         if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
         const body = await request.json()

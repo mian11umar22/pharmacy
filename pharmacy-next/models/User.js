@@ -36,6 +36,14 @@ const userSchema = new mongoose.Schema({
         address: String,
         city: String,
     }],
+    image: {
+        type: String,
+        default: '',
+    },
+    imagePublicId: {
+        type: String,
+        default: '',
+    },
 }, {
     timestamps: true,
 })
@@ -51,5 +59,10 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password)
 }
 
-const User = mongoose.models.User || mongoose.model('User', userSchema)
+// Force model re-registration in dev to handle schema changes
+if (mongoose.models && mongoose.models.User) {
+    delete mongoose.models.User
+}
+
+const User = mongoose.model('User', userSchema)
 export default User

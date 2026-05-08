@@ -12,8 +12,8 @@ const FeaturedProducts = () => {
     useEffect(() => {
         const fetchFeaturedProducts = async () => {
             try {
-                // Fetch the latest 8 products as "featured"
-                const res = await fetch('/api/products?limit=8&sort=newest')
+                // Fetch the top 8 products as "featured" (best sellers)
+                const res = await fetch('/api/products?limit=8&sort=popularity')
                 const data = await res.json()
                 if (res.ok) {
                     setProducts(data.products)
@@ -32,8 +32,8 @@ const FeaturedProducts = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-end mb-8">
                     <div className="animate-fade-up">
-                        <h2 className="text-2xl md:text-4xl font-black text-secondary mb-2 tracking-tight">Featured <span className="text-primary">Products</span></h2>
-                        <p className="text-sm md:text-base text-text-secondary font-medium">Top quality medicines and healthcare essentials</p>
+                        <h2 className="text-2xl md:text-4xl font-black text-secondary mb-2 tracking-tight">Best <span className="text-primary">Sellers</span></h2>
+                        <p className="text-sm md:text-base text-text-secondary font-medium">Most popular healthcare essentials trusted by our customers</p>
                     </div>
                     <Link href="/products" className="text-primary font-bold hover:underline mb-1 text-sm md:text-base hidden md:block">
                         View All Products →

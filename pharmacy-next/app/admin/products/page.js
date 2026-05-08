@@ -17,6 +17,7 @@ const SORT_OPTIONS = [
     { value: 'name-desc', label: 'Name: Z → A' },
     { value: 'stock-low', label: 'Stock: Low → High' },
     { value: 'stock-high', label: 'Stock: High → Low' },
+    { value: 'popularity', label: 'Best Selling' },
 ]
 
 export default function AdminProductsPage() {
@@ -28,6 +29,10 @@ export default function AdminProductsPage() {
     const [totalProducts, setTotalProducts] = useState(0)
     const [selectedCategory, setSelectedCategory] = useState('')
     const [sortBy, setSortBy] = useState('newest')
+    const [selectedIds, setSelectedIds] = useState([])
+    const [showBulkModal, setShowBulkModal] = useState(false)
+    const [bulkDiscount, setBulkDiscount] = useState('')
+    const [isBulkUpdating, setIsBulkUpdating] = useState(false)
 
     const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE)
 
@@ -116,6 +121,50 @@ export default function AdminProductsPage() {
         }
     }
 
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(products.map(p => p._id))
+        } else {
+            setSelectedIds([])
+        }
+    }
+
+    const toggleSelect = (id) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        )
+    }
+
+    const handleBulkDiscount = async () => {
+        const discountNum = Number(bulkDiscount)
+        if (isNaN(discountNum) || discountNum < 0 || discountNum > 100) {
+            toast.error('Please enter a valid discount (0-100)')
+            return
+        }
+
+        try {
+            setIsBulkUpdating(true)
+            const res = await fetch('/api/admin/products/bulk', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedIds, discount: discountNum })
+            })
+
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Bulk update failed')
+
+            toast.success(data.message, { style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' } })
+            setShowBulkModal(false)
+            setBulkDiscount('')
+            setSelectedIds([])
+            fetchProducts(currentPage, searchQuery, selectedCategory, sortBy)
+        } catch (error) {
+            toast.error(error.message)
+        } finally {
+            setIsBulkUpdating(false)
+        }
+    }
+
     // Pagination page numbers (max 5 shown)
     const getPageNumbers = () => {
         const pages = []
@@ -143,6 +192,64 @@ export default function AdminProductsPage() {
                     <Plus className="w-4 h-4" /> Add Product
                 </Link>
             </div>
+
+            {/* Bulk Actions Floating Bar - Moved to Top */}
+            {selectedIds.length > 0 && (
+                <div className="sticky top-4 mb-4 bg-secondary text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center justify-between gap-6 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold">{selectedIds.length} Products selected</span>
+                            <span className="text-[10px] text-gray-400">Bulk actions for selected items</span>
+                        </div>
+                        <div className="h-8 w-px bg-gray-700 hidden sm:block" />
+                    </div>
+                    
+                    <div className="flex-1 flex items-center justify-end gap-3">
+                        {!showBulkModal ? (
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setShowBulkModal(true)}
+                                    className="bg-primary hover:bg-primary-dark text-white text-xs sm:text-sm font-bold py-2 px-4 rounded-lg transition-all"
+                                >
+                                    Apply Discount
+                                </button>
+                                <button 
+                                    onClick={() => setSelectedIds([])}
+                                    className="text-gray-400 hover:text-white text-sm font-medium transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <div className="relative">
+                                    <input 
+                                        type="number"
+                                        placeholder="Discount %"
+                                        value={bulkDiscount}
+                                        onChange={(e) => setBulkDiscount(e.target.value)}
+                                        className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 w-24 sm:w-28 focus:outline-none focus:border-primary no-spinner"
+                                        autoFocus
+                                    />
+                                </div>
+                                <button 
+                                    onClick={handleBulkDiscount}
+                                    disabled={isBulkUpdating}
+                                    className="bg-primary hover:bg-primary-dark text-white text-xs sm:text-sm font-bold py-2 px-4 rounded-lg transition-all disabled:opacity-50"
+                                >
+                                    {isBulkUpdating ? 'Updating...' : 'Save'}
+                                </button>
+                                <button 
+                                    onClick={() => setShowBulkModal(false)}
+                                    className="text-gray-400 hover:text-white text-sm font-medium px-2 transition-colors"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Search + Filters Row */}
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
@@ -219,7 +326,15 @@ export default function AdminProductsPage() {
                                     ) : '💊'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-secondary text-sm truncate">{product.name}</p>
+                                    <div className="flex items-start justify-between gap-2">
+                                        <p className="font-semibold text-secondary text-sm truncate">{product.name}</p>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.includes(product._id)}
+                                            onChange={() => toggleSelect(product._id)}
+                                            className="w-4 h-4 rounded border-gray-300 accent-primary cursor-pointer flex-shrink-0 mt-0.5"
+                                        />
+                                    </div>
                                     <p className="text-xs text-text-secondary">{product.category?.name || '—'}</p>
                                     <div className="flex items-center gap-3 mt-1.5">
                                         <span className="font-bold text-primary text-sm">Rs. {product.price}</span>
@@ -250,6 +365,14 @@ export default function AdminProductsPage() {
                 <table className="w-full">
                     <thead>
                         <tr className="text-xs text-text-secondary border-b border-border bg-gray-50/50">
+                            <th className="w-12 px-5 py-3">
+                                <input
+                                    type="checkbox"
+                                    onChange={handleSelectAll}
+                                    checked={products.length > 0 && selectedIds.length === products.length}
+                                    className="w-4 h-4 rounded border-gray-300 accent-primary cursor-pointer"
+                                />
+                            </th>
                             <th className="text-left px-5 py-3 font-medium">Product</th>
                             <th className="text-left px-5 py-3 font-medium">Category</th>
                             <th className="text-left px-5 py-3 font-medium">Price</th>
@@ -262,14 +385,22 @@ export default function AdminProductsPage() {
                         {loading ? (
                             [1, 2, 3, 4, 5].map(i => (
                                 <tr key={i}>
-                                    <td colSpan={6} className="px-5 py-4">
+                                    <td colSpan={7} className="px-5 py-4">
                                         <div className="h-5 bg-gray-100 rounded animate-pulse w-full" />
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             products.map((product) => (
-                                <tr key={product._id} className="hover:bg-gray-50 transition-colors">
+                                <tr key={product._id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(product._id) ? 'bg-primary/5' : ''}`}>
+                                    <td className="px-5 py-3.5">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.includes(product._id)}
+                                            onChange={() => toggleSelect(product._id)}
+                                            className="w-4 h-4 rounded border-gray-300 accent-primary cursor-pointer"
+                                        />
+                                    </td>
                                     <td className="px-5 py-3.5">
                                         <div className="flex items-center gap-3">
                                             {product.image ? (

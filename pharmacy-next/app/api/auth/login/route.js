@@ -26,7 +26,16 @@ export async function POST(request) {
 
         const response = NextResponse.json({
             success: true,
-            user: { id: user._id, name: user.name, email: user.email, role: user.role },
+            user: { 
+                id: user._id,
+                _id: user._id, 
+                name: user.name, 
+                email: user.email, 
+                phone: user.phone, 
+                role: user.role,
+                image: user.image,
+                imagePublicId: user.imagePublicId
+            },
         })
 
         // Set cookie

@@ -30,6 +30,8 @@ export default function AddProductPage() {
         subcategory: '',
         item: '',
         stock: '',
+        imagePublicId: '',
+        salesCount: '',
     })
 
     const fetchCategories = useCallback(async () => {
@@ -58,6 +60,8 @@ export default function AddProductPage() {
                     subcategory: p.subcategory || '',
                     item: p.item || '',
                     stock: p.stock || '',
+                    imagePublicId: p.imagePublicId || '',
+                    salesCount: p.salesCount || 0,
                 })
                 if (p.image) setImagePreview(p.image)
             } else {
@@ -111,11 +115,11 @@ export default function AddProductPage() {
 
         setIsSubmitting(true)
         try {
-            let imageUrl = imagePreview // Use existing image if no new file is uploaded
+            let imageUrl = imagePreview 
+            let imagePublicId = form.imagePublicId
 
             // 1. Upload image if present (and changed)
             if (imageFile) {
-                // Convert file to base64
                 const base64Image = await new Promise((resolve, reject) => {
                     const reader = new FileReader()
                     reader.readAsDataURL(imageFile)
@@ -134,7 +138,9 @@ export default function AddProductPage() {
 
                 const uploadData = await uploadRes.json()
                 if (!uploadRes.ok) throw new Error(uploadData.error || 'Image upload failed')
+                
                 imageUrl = uploadData.url
+                imagePublicId = uploadData.publicId
             }
 
             // 2. Save/Update product
@@ -149,7 +155,9 @@ export default function AddProductPage() {
                     price: Number(form.price),
                     discount: Number(form.discount || 0),
                     stock: Number(form.stock || 0),
-                    image: imageUrl
+                    salesCount: Number(form.salesCount || 0),
+                    image: imageUrl,
+                    imagePublicId: imagePublicId
                 })
             })
 
@@ -315,6 +323,18 @@ export default function AddProductPage() {
                             min="0"
                             value={form.stock}
                             onChange={(e) => update('stock', e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-secondary mb-1.5">Sales Count (Popularity)</label>
+                        <input
+                            type="number"
+                            placeholder="0"
+                            min="0"
+                            value={form.salesCount}
+                            onChange={(e) => update('salesCount', e.target.value)}
                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                         />
                     </div>

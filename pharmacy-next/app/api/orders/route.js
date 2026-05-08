@@ -21,7 +21,11 @@ export async function GET(request) {
         // Build filter
         const filter = {}
         if (auth.user.role !== 'admin') {
-            filter.user = auth.user._id
+            // Match orders by userId OR by email (catches guest orders with matching email)
+            filter.$or = [
+                { user: auth.user._id },
+                { 'shippingAddress.email': auth.user.email }
+            ]
         }
         if (status) filter.status = status
 
@@ -108,6 +112,20 @@ export async function POST(request) {
                 { code: body.couponCode.toUpperCase() },
                 { $inc: { usedCount: 1 } }
             ).catch(err => console.error('Coupon usedCount update error:', err))
+        }
+
+        // Increment salesCount for each product in the order
+        if (body.items && Array.isArray(body.items)) {
+            const Product = (await import('@/models/Product')).default
+            const salesUpdates = body.items.map(item => ({
+                updateOne: {
+                    filter: { _id: item.product },
+                    update: { $inc: { salesCount: item.quantity || 1 } }
+                }
+            }))
+            if (salesUpdates.length > 0) {
+                await Product.bulkWrite(salesUpdates).catch(err => console.error('SalesCount update error:', err))
+            }
         }
 
         // Send emails (non-blocking)

@@ -48,6 +48,7 @@ export async function GET(request) {
             'name-desc': { name: -1 },
             'stock-low': { stock: 1 },
             'stock-high': { stock: -1 },
+            'popularity': { salesCount: -1 },
         }
 
         const skip = (page - 1) * limit

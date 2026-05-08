@@ -83,6 +83,20 @@ export default function AccountPage() {
                 {/* Menu Items */}
                 <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
                     <Link
+                        href="/account/profile"
+                        className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors border-b border-border"
+                    >
+                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <UserIcon className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-semibold text-secondary text-sm">Profile Settings</p>
+                            <p className="text-xs text-text-secondary">Update your name, phone & password</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </Link>
+
+                    <Link
                         href="/account/orders"
                         className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors border-b border-border"
                     >

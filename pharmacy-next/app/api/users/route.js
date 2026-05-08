@@ -44,6 +44,7 @@ export async function GET(request) {
                     totalOrders: { $sum: 1 },
                     totalSpent: { $sum: '$total' },
                     lastOrderDate: { $max: '$createdAt' },
+                    lastOrderCity: { $last: '$shippingAddress.city' },
                 }
             }
         ])
@@ -57,6 +58,7 @@ export async function GET(request) {
             totalOrders: statsMap[u._id.toString()]?.totalOrders || 0,
             totalSpent: statsMap[u._id.toString()]?.totalSpent || 0,
             lastOrderDate: statsMap[u._id.toString()]?.lastOrderDate || null,
+            lastOrderCity: statsMap[u._id.toString()]?.lastOrderCity || null,
         }))
 
         return NextResponse.json({ users: enrichedUsers, total, page, pages: Math.ceil(total / limit) })

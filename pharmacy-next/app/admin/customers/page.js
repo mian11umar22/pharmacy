@@ -164,6 +164,7 @@ export default function AdminCustomersPage() {
                                     <tr className="text-xs text-text-secondary border-b border-border">
                                         <th className="text-left px-5 py-3 font-medium">Customer</th>
                                         <th className="text-left px-5 py-3 font-medium">Phone</th>
+                                        <th className="text-left px-5 py-3 font-medium">City</th>
                                         <th className="text-left px-5 py-3 font-medium">Joined</th>
                                         <th className="text-left px-5 py-3 font-medium">Orders</th>
                                         <th className="text-left px-5 py-3 font-medium">Total Spent</th>
@@ -191,6 +192,11 @@ export default function AdminCustomersPage() {
                                             {/* Phone */}
                                             <td className="px-5 py-3.5 text-sm text-secondary">
                                                 {user.phone || <span className="text-text-secondary">—</span>}
+                                            </td>
+
+                                            {/* City */}
+                                            <td className="px-5 py-3.5 text-sm text-secondary">
+                                                {user.lastOrderCity || <span className="text-text-secondary">—</span>}
                                             </td>
 
                                             {/* Joined */}

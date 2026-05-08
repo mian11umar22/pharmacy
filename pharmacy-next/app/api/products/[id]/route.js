@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import Product from '@/models/Product'
 import { requireAdmin } from '@/lib/auth'
+import { deleteImage } from '@/lib/cloudinary'
 
 // GET /api/products/[id] — public, single product
 export async function GET(request, { params }) {
@@ -56,8 +57,18 @@ export async function DELETE(request, { params }) {
 
         await dbConnect()
         const { id } = await params
-        const product = await Product.findByIdAndDelete(id)
+        
+        // Find product first to get imagePublicId
+        const product = await Product.findById(id)
         if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+
+        // Delete from Cloudinary if publicId exists
+        if (product.imagePublicId) {
+            await deleteImage(product.imagePublicId)
+        }
+
+        // Delete from DB
+        await Product.findByIdAndDelete(id)
 
         return NextResponse.json({ success: true, message: 'Product deleted' })
     } catch (error) {

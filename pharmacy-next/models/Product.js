@@ -30,6 +30,14 @@ const productSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
+    imagePublicId: {
+        type: String,
+        default: '',
+    },
+    salesCount: {
+        type: Number,
+        default: 0,
+    },
     category: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
@@ -61,4 +69,10 @@ productSchema.index({ category: 1, subcategory: 1, item: 1 })
 productSchema.index({ name: 'text', description: 'text' })
 productSchema.index({ isActive: 1, createdAt: -1 })
 
-export default mongoose.models.Product || mongoose.model('Product', productSchema)
+// Force model re-registration in dev to handle schema changes
+if (mongoose.models && mongoose.models.Product) {
+    delete mongoose.models.Product
+}
+
+const Product = mongoose.model('Product', productSchema)
+export default Product

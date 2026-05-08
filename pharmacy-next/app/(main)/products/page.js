@@ -17,7 +17,7 @@ const ProductsContent = () => {
     const categoryParam = searchParams.get('category') || ''
     const subParam = searchParams.get('sub') || ''
     const itemParam = searchParams.get('item') || ''
-    const sortBy = searchParams.get('sort') || 'popular'
+    const sortBy = searchParams.get('sort') || 'popularity'
     const searchQuery = searchParams.get('search') || ''
     const pageParam = parseInt(searchParams.get('page')) || 1
 
@@ -180,7 +180,7 @@ const ProductsContent = () => {
                             onChange={(e) => updateURL({ sort: e.target.value })}
                             className="w-full md:w-auto px-3 py-2 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-primary"
                         >
-                            <option value="popular">Popular</option>
+                            <option value="popularity">Popular</option>
                             <option value="newest">Newest</option>
                             <option value="price-low">Price: Low → High</option>
                             <option value="price-high">Price: High → Low</option>

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/auth/me — get current user
 export async function GET(request) {
     try {
@@ -13,10 +15,13 @@ export async function GET(request) {
         return NextResponse.json({
             user: {
                 id: user._id,
+                _id: user._id,
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
                 role: user.role,
+                image: user.image,
+                imagePublicId: user.imagePublicId,
                 addresses: user.addresses,
             },
         })

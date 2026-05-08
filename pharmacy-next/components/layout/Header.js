@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search, ShoppingCart, User, Menu, X } from 'lucide-react'
+import { Search, ShoppingCart, User, Menu, X, ChevronDown, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import Image from 'next/image'
 import { useCart } from '../../context/CartContext'
@@ -76,30 +76,54 @@ const Header = () => {
 
                         {user ? (
                             <div className="relative group hidden md:block">
-                                <Link
-                                    href={user.role === 'admin' ? '/admin' : '/account'}
-                                    className="flex flex-col items-center text-text-secondary hover:text-primary transition"
-                                >
-                                    <User className="w-6 h-6" />
-                                    <span className="text-xs mt-0.5 truncate max-w-[80px]">
-                                        {user.role === 'admin' ? 'Dashboard' : 'Account'}
-                                    </span>
-                                </Link>
+                                <button className="flex items-center gap-2.5 py-1 px-2 rounded-xl hover:bg-gray-50 transition-all cursor-pointer">
+                                    <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-primary/20 shadow-sm">
+                                        {user.image ? (
+                                            <Image src={user.image} alt="Profile" width={36} height={36} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                                                <User className="w-5 h-5 text-primary" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="text-left hidden lg:block">
+                                        <p className="text-xs font-bold text-secondary truncate max-w-[100px] leading-tight">
+                                            {user.name.split(' ')[0]}
+                                        </p>
+                                        <p className="text-[10px] text-text-secondary capitalize leading-tight mt-0.5">
+                                            {user.role}
+                                        </p>
+                                    </div>
+                                    <ChevronDown className="w-3.5 h-3.5 text-text-secondary group-hover:rotate-180 transition-transform duration-300" />
+                                </button>
 
-                                {/* Simple hover menu for logout */}
-                                <div className="absolute top-full right-0 mt-2 w-32 bg-white border border-border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto overflow-hidden">
-                                    <button
-                                        onClick={logout}
-                                        className="w-full text-left px-4 py-2 text-xs text-text-secondary hover:bg-gray-50 hover:text-danger transition-colors font-semibold"
-                                    >
-                                        Log Out
-                                    </button>
+                                {/* Dropdown Menu */}
+                                <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-border rounded-xl shadow-xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50 overflow-hidden">
+                                    <div className="p-2">
+                                        <Link
+                                            href={user.role === 'admin' ? '/admin' : '/account'}
+                                            className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-secondary hover:bg-primary/5 hover:text-primary rounded-lg transition-colors"
+                                        >
+                                            <User className="w-4 h-4" />
+                                            {user.role === 'admin' ? 'Admin Dashboard' : 'My Account'}
+                                        </Link>
+                                        <div className="h-px bg-border my-1"></div>
+                                        <button
+                                            onClick={logout}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-danger hover:bg-danger/5 rounded-lg transition-colors cursor-pointer"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            Logout
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
-                            <Link href="/login" className="hidden md:flex flex-col items-center text-text-secondary hover:text-primary transition">
-                                <User className="w-6 h-6" />
-                                <span className="text-xs mt-0.5">Login</span>
+                            <Link href="/login" className="hidden md:flex flex-col items-center text-text-secondary hover:text-primary transition group">
+                                <div className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                    <User className="w-5 h-5" />
+                                </div>
+                                <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Login</span>
                             </Link>
                         )}
 
@@ -158,10 +182,15 @@ const Header = () => {
                             <>
                                 <Link
                                     href={user.role === 'admin' ? '/admin' : '/account'}
-                                    className="block px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors"
+                                    className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
-                                    👤 {user.role === 'admin' ? 'Admin Dashboard' : 'My Account'}
+                                    {user.image ? (
+                                        <img src={user.image} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-border" />
+                                    ) : (
+                                        <span>👤</span>
+                                    )}
+                                    {user.role === 'admin' ? 'Admin Dashboard' : 'My Account'}
                                 </Link>
                                 <button
                                     onClick={() => {
