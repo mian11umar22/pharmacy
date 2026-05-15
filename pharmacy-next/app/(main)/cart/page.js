@@ -38,7 +38,7 @@ export default function CartPage() {
     const total = subtotal + delivery
 
     const handleRemove = (item) => {
-        removeFromCart(item._id || item.id)
+        removeFromCart(item._id || item.id, item.size)
         toast.success(`${item.name} removed from cart`, {
             duration: 2000,
             position: 'bottom-center',
@@ -137,6 +137,9 @@ export default function CartPage() {
                                                     <Link href={`/products/${itemId}`} className="font-semibold text-secondary text-sm md:text-base hover:text-primary transition-colors line-clamp-1">
                                                         {item.name}
                                                     </Link>
+                                                    {item.size && (
+                                                        <p className="text-[10px] font-bold text-primary mt-0.5 uppercase tracking-wider">Size: {item.size}</p>
+                                                    )}
                                                 </div>
                                                 <button
                                                     onClick={() => handleRemove(item)}
@@ -151,7 +154,7 @@ export default function CartPage() {
                                                 {/* Quantity Controls */}
                                                 <div className="flex items-center gap-1">
                                                     <button
-                                                        onClick={() => updateQuantity(itemId, item.quantity - 1)}
+                                                        onClick={() => updateQuantity(itemId, item.quantity - 1, item.size)}
                                                         disabled={item.quantity <= 1}
                                                         className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                                                     >
@@ -161,7 +164,7 @@ export default function CartPage() {
                                                         {item.quantity}
                                                     </span>
                                                     <button
-                                                        onClick={() => updateQuantity(itemId, item.quantity + 1)}
+                                                        onClick={() => updateQuantity(itemId, item.quantity + 1, item.size)}
                                                         className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer"
                                                     >
                                                         <Plus className="w-3 h-3" />

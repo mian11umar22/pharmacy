@@ -34,7 +34,10 @@ async function sendEmail({ to, subject, html }) {
 export async function sendOrderConfirmation(order, customerEmail) {
     const itemsHtml = order.items.map(item => `
         <tr>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #eee;">${item.name}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #eee;">
+                <div style="font-weight: 600;">${item.name}</div>
+                ${item.size ? `<div style="font-size: 11px; color: #16a34a; font-weight: bold; text-transform: uppercase;">Size: ${item.size}</div>` : ''}
+            </td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: right;">Rs. ${item.price * item.quantity}</td>
         </tr>
@@ -133,6 +136,10 @@ export async function sendOrderStatusUpdate(order, customerEmail) {
 }
 
 export async function sendAdminNewOrderNotification(order) {
+    const itemsList = order.items.map(item => 
+        `• ${item.name}${item.size ? ` (Size: ${item.size})` : ''} x ${item.quantity}`
+    ).join('<br/>')
+
     const html = `
     <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
         <div style="background: #1B3A4B; padding: 24px; text-align: center; border-radius: 12px 12px 0 0;">
@@ -143,8 +150,19 @@ export async function sendAdminNewOrderNotification(order) {
             <p><strong>Customer:</strong> ${order.shippingAddress.name}</p>
             <p><strong>Phone:</strong> ${order.shippingAddress.phone}</p>
             <p><strong>Total:</strong> Rs. ${order.total}</p>
-            <p><strong>Items:</strong> ${order.items.length} products</p>
             <p><strong>Address:</strong> ${order.shippingAddress.address}, ${order.shippingAddress.city}</p>
+            
+            <h3 style="border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 20px;">Items Ordered:</h3>
+            <div style="font-size: 14px; color: #444; line-height: 1.6;">
+                ${itemsList}
+            </div>
+            
+            <div style="margin-top: 25px; text-align: center;">
+                <a href="${process.env.NEXT_PUBLIC_BASE_URL}/admin/orders/${order._id}" 
+                   style="background: #16a34a; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                   View Order in Dashboard
+                </a>
+            </div>
         </div>
     </div>`
 

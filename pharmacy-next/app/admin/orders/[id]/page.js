@@ -152,7 +152,10 @@ export default function AdminOrderDetailPage({ params }) {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-secondary truncate">{item.name}</p>
-                                        <p className="text-xs text-text-secondary">Qty: {item.quantity} × Rs. {item.price}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-xs text-text-secondary">Qty: {item.quantity} × Rs. {item.price}</p>
+                                            {item.size && <span className="text-[10px] font-black text-primary uppercase">Size: {item.size}</span>}
+                                        </div>
                                     </div>
                                     <p className="text-sm font-bold text-secondary flex-shrink-0">
                                         Rs. {(item.quantity * item.price).toLocaleString()}

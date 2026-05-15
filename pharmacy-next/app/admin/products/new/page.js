@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Upload, Loader2 } from 'lucide-react'
+import { ArrowLeft, Upload, Loader2, Trash2, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 
@@ -32,6 +32,7 @@ export default function AddProductPage() {
         stock: '',
         imagePublicId: '',
         salesCount: '',
+        variants: [], // { size: '', price: '', stock: '' }
     })
 
     const fetchCategories = useCallback(async () => {
@@ -62,6 +63,7 @@ export default function AddProductPage() {
                     stock: p.stock || '',
                     imagePublicId: p.imagePublicId || '',
                     salesCount: p.salesCount || 0,
+                    variants: p.variants || [],
                 })
                 if (p.image) setImagePreview(p.image)
             } else {
@@ -92,6 +94,26 @@ export default function AddProductPage() {
             newForm.item = ''
         }
         setForm(newForm)
+    }
+
+    const addVariant = () => {
+        setForm(prev => ({
+            ...prev,
+            variants: [...prev.variants, { size: '', price: prev.price, stock: '' }]
+        }))
+    }
+
+    const removeVariant = (index) => {
+        setForm(prev => ({
+            ...prev,
+            variants: prev.variants.filter((_, i) => i !== index)
+        }))
+    }
+
+    const updateVariant = (index, field, value) => {
+        const newVariants = [...form.variants]
+        newVariants[index] = { ...newVariants[index], [field]: value }
+        setForm(prev => ({ ...prev, variants: newVariants }))
     }
 
     // Get data for cascading dropdowns from real categories
@@ -156,6 +178,11 @@ export default function AddProductPage() {
                     discount: Number(form.discount || 0),
                     stock: Number(form.stock || 0),
                     salesCount: Number(form.salesCount || 0),
+                    variants: form.variants.map(v => ({
+                        ...v,
+                        price: Number(v.price),
+                        stock: Number(v.stock)
+                    })),
                     image: imageUrl,
                     imagePublicId: imagePublicId
                 })
@@ -337,6 +364,73 @@ export default function AddProductPage() {
                             onChange={(e) => update('salesCount', e.target.value)}
                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                         />
+                    </div>
+
+                    {/* Variant Management (Sizes) */}
+                    <div className="pt-4 border-t border-border">
+                        <div className="flex items-center justify-between mb-3">
+                            <div>
+                                <h3 className="text-sm font-bold text-secondary">Product Variants (Sizes)</h3>
+                                <p className="text-[10px] text-text-secondary">Add sizes like S, M, L, XL for garments</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={addVariant}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-primary/5 text-primary hover:bg-primary hover:text-white border border-primary/20 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm"
+                            >
+                                <Plus className="w-4 h-4" /> Add Size
+                            </button>
+                        </div>
+
+                        {form.variants.length > 0 ? (
+                            <div className="space-y-3">
+                                {form.variants.map((variant, index) => (
+                                    <div key={index} className="flex items-end gap-2 bg-background p-3 rounded-xl border border-border">
+                                        <div className="flex-1">
+                                            <label className="block text-[10px] font-bold text-text-secondary mb-1">SIZE</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. XL"
+                                                value={variant.size}
+                                                onChange={(e) => updateVariant(index, 'size', e.target.value)}
+                                                className="w-full px-3 py-2 rounded-lg border border-border bg-white text-xs focus:outline-none focus:border-primary"
+                                            />
+                                        </div>
+                                        <div className="w-24">
+                                            <label className="block text-[10px] font-bold text-text-secondary mb-1">PRICE</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Price"
+                                                value={variant.price}
+                                                onChange={(e) => updateVariant(index, 'price', e.target.value)}
+                                                className="w-full px-3 py-2 rounded-lg border border-border bg-white text-xs focus:outline-none focus:border-primary"
+                                            />
+                                        </div>
+                                        <div className="w-20">
+                                            <label className="block text-[10px] font-bold text-text-secondary mb-1">STOCK</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Qty"
+                                                value={variant.stock}
+                                                onChange={(e) => updateVariant(index, 'stock', e.target.value)}
+                                                className="w-full px-3 py-2 rounded-lg border border-border bg-white text-xs focus:outline-none focus:border-primary"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeVariant(index)}
+                                            className="p-2 text-danger hover:bg-danger/10 rounded-lg transition-colors mb-0.5"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                                <p className="text-[10px] text-text-secondary">No sizes added. Default price/stock will be used.</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Image Upload Placeholder */}

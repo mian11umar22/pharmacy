@@ -14,6 +14,7 @@ const orderItemSchema = new mongoose.Schema({
         min: 1,
     },
     image: String,
+    size: String,
 })
 
 const orderSchema = new mongoose.Schema({

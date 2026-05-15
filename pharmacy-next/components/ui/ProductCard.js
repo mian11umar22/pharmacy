@@ -4,16 +4,34 @@ import { ShoppingCart, Check } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 
 const ProductCard = ({ product }) => {
+    const router = useRouter()
     const { addToCart } = useCart()
     const [added, setAdded] = useState(false)
 
     const handleAddToCart = (e) => {
         e.preventDefault()
         e.stopPropagation()
+
+        // If product has sizes, redirect to details page to pick one
+        if (product.variants?.length > 0) {
+            router.push(`/products/${product._id}`)
+            toast('Please select a size first!', {
+                icon: '📏',
+                style: {
+                    borderRadius: '10px',
+                    background: '#1B3A4B',
+                    color: '#fff',
+                    fontSize: '14px',
+                }
+            })
+            return
+        }
+
         addToCart(product)
         setAdded(true)
         toast.success(`${product.name} added to cart!`, {

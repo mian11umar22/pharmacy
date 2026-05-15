@@ -189,7 +189,8 @@ export default function CheckoutPage() {
                         name: item.name,
                         price: item.price,
                         quantity: item.quantity,
-                        image: item.image
+                        image: item.image,
+                        size: item.size || ''
                     })),
                     subtotal,
                     deliveryFee: delivery,
@@ -418,7 +419,10 @@ export default function CheckoutPage() {
                                         />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-secondary truncate">{item.name}</p>
-                                            <p className="text-xs text-text-secondary">Qty: {item.quantity}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-xs text-text-secondary">Qty: {item.quantity}</p>
+                                                {item.size && <p className="text-[10px] font-black text-primary uppercase">Size: {item.size}</p>}
+                                            </div>
                                         </div>
                                         <p className="text-sm font-semibold text-secondary flex-shrink-0">
                                             Rs. {item.price * item.quantity}

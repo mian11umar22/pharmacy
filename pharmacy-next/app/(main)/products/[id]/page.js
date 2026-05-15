@@ -20,6 +20,7 @@ export default function ProductDetailPage({ params: paramsPromise }) {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
     const [quantity, setQuantity] = useState(1)
+    const [selectedSize, setSelectedSize] = useState('')
     const [added, setAdded] = useState(false)
 
     useEffect(() => {
@@ -62,8 +63,13 @@ export default function ProductDetailPage({ params: paramsPromise }) {
 
     const handleAddToCart = () => {
         if (!product) return
+        if (product.variants?.length > 0 && !selectedSize) {
+            toast.error('Please select a size first!', { position: 'bottom-center' })
+            return
+        }
+
         for (let i = 0; i < quantity; i++) {
-            addToCart(product)
+            addToCart({ ...product, size: selectedSize })
         }
         setAdded(true)
         toast.success(`${quantity}x ${product.name} added to cart!`, {
@@ -85,8 +91,13 @@ export default function ProductDetailPage({ params: paramsPromise }) {
 
     const handleBuyNow = () => {
         if (!product) return
+        if (product.variants?.length > 0 && !selectedSize) {
+            toast.error('Please select a size first!', { position: 'bottom-center' })
+            return
+        }
+
         for (let i = 0; i < quantity; i++) {
-            addToCart(product)
+            addToCart({ ...product, size: selectedSize })
         }
         router.push('/cart')
     }
@@ -112,7 +123,11 @@ export default function ProductDetailPage({ params: paramsPromise }) {
         )
     }
 
-    const savedAmount = (product.originalPrice || 0) - product.price
+    const selectedVariant = product.variants?.find(v => v.size === selectedSize)
+    const currentPrice = selectedVariant ? selectedVariant.price : product.price
+    const currentOriginalPrice = selectedVariant ? Math.round(selectedVariant.price / (1 - (product.discount || 0) / 100)) : (product.originalPrice || 0)
+
+    const savedAmount = currentOriginalPrice - currentPrice
     const categoryName = product.category?.name || 'Category'
     const categorySlug = product.category?.slug || ''
 
@@ -189,9 +204,9 @@ export default function ProductDetailPage({ params: paramsPromise }) {
 
                         {/* Price Section */}
                         <div className="flex items-end gap-3 mb-2">
-                            <span className="text-3xl md:text-5xl font-black text-primary">Rs. {product.price}</span>
-                            {product.originalPrice > product.price && (
-                                <span className="text-xl text-gray-400 line-through mb-1.5">Rs. {product.originalPrice}</span>
+                            <span className="text-3xl md:text-5xl font-black text-primary">Rs. {currentPrice}</span>
+                            {currentOriginalPrice > currentPrice && (
+                                <span className="text-xl text-gray-400 line-through mb-1.5">Rs. {currentOriginalPrice}</span>
                             )}
                         </div>
                         {savedAmount > 0 && (
@@ -203,11 +218,11 @@ export default function ProductDetailPage({ params: paramsPromise }) {
 
                         {/* Stock Status */}
                         <div className="flex items-center gap-2 mb-8 pb-8 border-b border-border">
-                            {product.stock > 0 ? (
+                            {(selectedVariant ? selectedVariant.stock : product.stock) > 0 ? (
                                 <>
                                     <div className="w-3 h-3 bg-success rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
                                     <span className="text-sm font-bold text-success">In Stock</span>
-                                    <span className="text-xs text-text-secondary font-medium">({product.stock} units available)</span>
+                                    <span className="text-xs text-text-secondary font-medium">({selectedVariant ? selectedVariant.stock : product.stock} units available)</span>
                                 </>
                             ) : (
                                 <>
@@ -217,6 +232,31 @@ export default function ProductDetailPage({ params: paramsPromise }) {
                                 </>
                             )}
                         </div>
+
+                        {/* Size Selection (Conditionally shown for garments/items with variants) */}
+                        {product.variants?.length > 0 && (
+                            <div className="mb-8">
+                                <label className="text-sm font-bold text-secondary mb-3 block flex items-center justify-between">
+                                    SELECT SIZE
+                                    {selectedSize && <span className="text-primary text-xs font-black">SELECTED: {selectedSize}</span>}
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {product.variants.map((v) => (
+                                        <button
+                                            key={v._id || v.size}
+                                            onClick={() => setSelectedSize(v.size)}
+                                            disabled={v.stock === 0}
+                                            className={`min-w-[50px] h-12 px-4 rounded-xl font-bold text-sm transition-all border-2 flex items-center justify-center cursor-pointer ${selectedSize === v.size
+                                                ? 'border-primary bg-primary text-white shadow-md'
+                                                : 'border-border bg-white text-secondary hover:border-primary/50'
+                                                } ${v.stock === 0 ? 'opacity-30 cursor-not-allowed grayscale' : ''}`}
+                                        >
+                                            {v.size}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Quantity Selector */}
                         <div className="mb-8">
