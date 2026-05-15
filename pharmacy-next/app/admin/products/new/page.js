@@ -135,6 +135,15 @@ export default function AddProductPage() {
             return
         }
 
+        // Validate variants if any exist
+        if (form.variants.length > 0) {
+            const invalidVariant = form.variants.find(v => !v.size || !v.price || !v.stock)
+            if (invalidVariant) {
+                toast.error('Please fill all Size, Price, and Stock fields for all variants', { style: toastStyle })
+                return
+            }
+        }
+
         setIsSubmitting(true)
         try {
             let imageUrl = imagePreview 
@@ -387,7 +396,9 @@ export default function AddProductPage() {
                                 {form.variants.map((variant, index) => (
                                     <div key={index} className="flex items-end gap-2 bg-background p-3 rounded-xl border border-border">
                                         <div className="flex-1">
-                                            <label className="block text-[10px] font-bold text-text-secondary mb-1">SIZE</label>
+                                            <label className="block text-[10px] font-bold text-text-secondary mb-1">
+                                                SIZE <span className="text-danger">*</span>
+                                            </label>
                                             <input
                                                 type="text"
                                                 placeholder="e.g. XL"
@@ -397,7 +408,9 @@ export default function AddProductPage() {
                                             />
                                         </div>
                                         <div className="w-24">
-                                            <label className="block text-[10px] font-bold text-text-secondary mb-1">PRICE</label>
+                                            <label className="block text-[10px] font-bold text-text-secondary mb-1">
+                                                PRICE <span className="text-danger">*</span>
+                                            </label>
                                             <input
                                                 type="number"
                                                 placeholder="Price"
@@ -407,7 +420,9 @@ export default function AddProductPage() {
                                             />
                                         </div>
                                         <div className="w-20">
-                                            <label className="block text-[10px] font-bold text-text-secondary mb-1">STOCK</label>
+                                            <label className="block text-[10px] font-bold text-text-secondary mb-1">
+                                                STOCK <span className="text-danger">*</span>
+                                            </label>
                                             <input
                                                 type="number"
                                                 placeholder="Qty"
