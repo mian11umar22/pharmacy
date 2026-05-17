@@ -11,14 +11,19 @@ export async function applyDynamicSales(products) {
         
         settings.forEach(s => {
             const banner = s.value
-            // Only apply if banner is active, has discount, and is linked to a category
-            if (banner?.active && banner.discount > 0 && banner.link?.includes('?category=')) {
-                const catSlug = banner.link.split('?category=')[1].split('&')[0] // extract pure slug
-                if (catSlug) {
-                    const discountNum = parseInt(banner.discount)
-                    if (!isNaN(discountNum) && discountNum > 0) {
+            if (banner?.active && banner.discount > 0) {
+                const discountNum = parseInt(banner.discount)
+                if (isNaN(discountNum) || discountNum <= 0) return
+
+                if (banner.link?.includes('?category=')) {
+                    // Category-specific sale
+                    const catSlug = banner.link.split('?category=')[1].split('&')[0]
+                    if (catSlug) {
                         saleDiscounts[catSlug] = Math.max(saleDiscounts[catSlug] || 0, discountNum)
                     }
+                } else if (banner.link === '/products') {
+                    // Global sale (All Products)
+                    saleDiscounts['ALL'] = Math.max(saleDiscounts['ALL'] || 0, discountNum)
                 }
             }
         })
@@ -30,8 +35,13 @@ export async function applyDynamicSales(products) {
 
         const updatedList = productsList.map(p => {
             const catSlug = p.category?.slug
-            if (catSlug && saleDiscounts[catSlug]) {
-                const dynamicDiscount = saleDiscounts[catSlug]
+            
+            // Get the best applicable discount (either category specific or ALL)
+            const catDiscount = (catSlug && saleDiscounts[catSlug]) ? saleDiscounts[catSlug] : 0
+            const globalDiscount = saleDiscounts['ALL'] || 0
+            const dynamicDiscount = Math.max(catDiscount, globalDiscount)
+
+            if (dynamicDiscount > 0) {
                 const pObj = p.toObject ? p.toObject() : { ...p }
                 
                 // Compare with product's intrinsic discount. Apply whichever is better.
