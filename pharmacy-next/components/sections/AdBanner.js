@@ -36,7 +36,7 @@ export default function AdBanner({ slot = 'ad_banner_2' }) {
                 <img 
                     src={banner.image} 
                     alt="Special Offer" 
-                    className="w-full h-auto object-cover md:max-h-[300px]"
+                    className="w-full h-auto rounded-2xl"
                 />
             </Link>
         </section>
