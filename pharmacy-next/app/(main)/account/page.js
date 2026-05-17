@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Package, LogOut, ChevronRight, User as UserIcon, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
@@ -51,8 +52,18 @@ export default function AccountPage() {
             <div className="bg-primary">
                 <div className="max-w-3xl mx-auto px-4 py-8 sm:py-10">
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                            <UserIcon className="w-8 h-8 text-white" />
+                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border-2 border-white/30 overflow-hidden shadow-md">
+                            {user?.image ? (
+                                <Image 
+                                    src={user.image} 
+                                    alt={user.name} 
+                                    width={64} 
+                                    height={64} 
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <UserIcon className="w-8 h-8 text-white" />
+                            )}
                         </div>
                         <div className="text-white">
                             <h1 className="text-xl font-bold">{user.name}</h1>

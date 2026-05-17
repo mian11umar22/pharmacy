@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb'
 import Product from '@/models/Product'
 import { requireAdmin } from '@/lib/auth'
 import { deleteImage } from '@/lib/cloudinary'
+import { applyDynamicSales } from '@/lib/sales'
 
 // GET /api/products/[id] — public, single product
 export async function GET(request, { params }) {
@@ -15,7 +16,9 @@ export async function GET(request, { params }) {
             return NextResponse.json({ error: 'Product not found' }, { status: 404 })
         }
 
-        return NextResponse.json({ product })
+        const productWithSale = await applyDynamicSales(product)
+
+        return NextResponse.json({ product: productWithSale })
     } catch (error) {
         console.error('Get product error:', error)
         return NextResponse.json({ error: 'Server error' }, { status: 500 })

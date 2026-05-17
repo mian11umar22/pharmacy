@@ -53,19 +53,19 @@ const ProductCard = ({ product }) => {
 
     return (
         <div className="bg-white rounded-xl shadow-card p-3 md:p-4 group relative flex flex-col h-full animate-fade-up hover:shadow-hover hover:-translate-y-1 transition-all duration-300">
-            {/* Discount Badge (Left) */}
-            {product.discount > 0 && (
-                <span className="absolute top-3 left-3 bg-accent text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full z-10 shadow-sm animate-fade-in">
-                    {product.discount}% OFF
-                </span>
-            )}
-
-            {/* Best Seller Badge (Right) */}
-            {product.salesCount >= 20 && (
-                <span className="absolute top-3 right-3 bg-primary text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full z-10 shadow-sm animate-fade-in">
-                    Best Seller
-                </span>
-            )}
+            {/* Badges Container */}
+            <div className="absolute top-3 left-3 right-3 z-10 flex flex-wrap gap-1.5 pointer-events-none">
+                {product.discount > 0 && (
+                    <span className="bg-accent text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full shadow-sm animate-fade-in">
+                        {product.discount}% OFF
+                    </span>
+                )}
+                {product.salesCount >= 20 && (
+                    <span className="bg-primary text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full shadow-sm animate-fade-in">
+                        Best Seller
+                    </span>
+                )}
+            </div>
 
             {/* Image */}
             <Link

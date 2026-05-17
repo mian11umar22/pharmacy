@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb'
 import Product from '@/models/Product'
 import Category from '@/models/Category'
 import { requireAdmin } from '@/lib/auth'
+import { applyDynamicSales } from '@/lib/sales'
 
 // GET /api/products — public, list products with filters
 export async function GET(request) {
@@ -59,8 +60,10 @@ export async function GET(request) {
             .skip(skip)
             .limit(limit)
 
+        const productsWithSales = await applyDynamicSales(products)
+
         return NextResponse.json({
-            products,
+            products: productsWithSales,
             total,
             page,
             pages: Math.ceil(total / limit),

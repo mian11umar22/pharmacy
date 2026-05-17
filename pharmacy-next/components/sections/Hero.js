@@ -3,8 +3,34 @@
 import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useState, useEffect } from 'react'
 
 const Hero = () => {
+    const [settings, setSettings] = useState({
+        hero_title_main: 'Trusted Medicines',
+        hero_title_highlight: 'Delivered to You',
+        hero_subtitle: 'Order genuine medicines, vitamins, and personal care products from the comfort of your home. Fast delivery across Pakistan.',
+    })
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch('/api/settings')
+                const data = await res.json()
+                if (data.settings) {
+                    setSettings(prev => ({
+                        hero_title_main: data.settings.hero_title_main || prev.hero_title_main,
+                        hero_title_highlight: data.settings.hero_title_highlight || prev.hero_title_highlight,
+                        hero_subtitle: data.settings.hero_subtitle || prev.hero_subtitle,
+                    }))
+                }
+            } catch (error) {
+                console.error("Failed to fetch hero settings", error)
+            }
+        }
+        fetchSettings()
+    }, [])
+
     return (
         <section className="relative bg-gradient-to-br from-primary-light/50 to-white py-12 md:py-20 overflow-hidden">
 
@@ -26,12 +52,14 @@ const Hero = () => {
                         </span>
 
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-secondary leading-tight mb-6">
-                            Trusted Medicines <br className="hidden md:block" />
-                            <span className="text-primary">Delivered to You</span>
+                            {settings.hero_title_main} <br className="hidden md:block" />
+                            <span className="text-primary">{settings.hero_title_highlight}</span>
                         </h1>
                         <p className="text-lg text-text-secondary mb-8 max-w-lg mx-auto md:mx-0 leading-relaxed">
-                            Order genuine medicines, vitamins, and personal care products from the comfort of your home. Fast delivery across Pakistan.
+                            {settings.hero_subtitle}
                         </p>
+
+
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                             <Link

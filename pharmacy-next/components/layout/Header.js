@@ -2,22 +2,40 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search, ShoppingCart, User, Menu, X, ChevronDown, LogOut } from 'lucide-react'
-import { useState } from 'react'
+import { Search, ShoppingCart, User, Menu, X, ChevronDown, LogOut, MapPin } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useCart } from '../../context/CartContext'
 import CategoryBar from './CategoryBar'
+import TrackOrderModal from '../ui/TrackOrderModal'
 
 import { useAuth } from '../../context/AuthContext'
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [marqueeText, setMarqueeText] = useState('Order Now: 03054964343 | 💊 Genuine Medicines at Your Doorstep | WhatsApp us your Prescription')
     const router = useRouter()
     const { getCartCount } = useCart()
     const { user, logout } = useAuth()
 
     const cartCount = getCartCount()
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch('/api/settings')
+                const data = await res.json()
+                if (data.settings?.top_marquee) {
+                    setMarqueeText(data.settings.top_marquee)
+                }
+            } catch (error) {
+                console.error("Failed to fetch marquee", error)
+            }
+        }
+        fetchSettings()
+    }, [])
 
     const handleSearch = (e) => {
         e.preventDefault()
@@ -32,7 +50,7 @@ const Header = () => {
             {/* Top Bar with classic Marquee */}
             <div className="bg-primary text-white text-xs py-2">
                 <marquee behavior="scroll" direction="left" scrollamount="5">
-                    Order Now: 03054964343    |   💊 Genuine Medicines at Your Doorstep   |   WhatsApp us your Prescription
+                    {marqueeText}
                 </marquee>
             </div>
 
@@ -73,6 +91,14 @@ const Header = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
                             <span className="text-xs mt-0.5">Shop</span>
                         </Link>
+
+                        <button 
+                            onClick={() => setIsTrackingModalOpen(true)}
+                            className="hidden md:flex flex-col items-center text-text-secondary hover:text-primary transition cursor-pointer"
+                        >
+                            <MapPin className="w-6 h-6" />
+                            <span className="text-xs mt-0.5">Track</span>
+                        </button>
 
                         {user ? (
                             <div className="relative group hidden md:block">
@@ -177,6 +203,16 @@ const Header = () => {
                         >
                             🛒 Shop Medicines
                         </Link>
+                        
+                        <button
+                            onClick={() => {
+                                setIsMenuOpen(false)
+                                setIsTrackingModalOpen(true)
+                            }}
+                            className="w-full text-left block px-3 py-3 rounded-lg text-base font-medium text-secondary hover:text-primary hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                            📍 Track Order
+                        </button>
 
                         {user ? (
                             <>
@@ -231,6 +267,11 @@ const Header = () => {
                     </div>
                 </div>
             )}
+
+            <TrackOrderModal 
+                isOpen={isTrackingModalOpen} 
+                onClose={() => setIsTrackingModalOpen(false)} 
+            />
         </header>
     )
 
