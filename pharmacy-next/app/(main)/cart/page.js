@@ -113,6 +113,15 @@ export default function CartPage() {
                         <div className="space-y-4">
                             {cartItems.map((item) => {
                                 const itemId = item._id || item.id;
+                                
+                                // Get available stock for this item/variant
+                                let availableStock = item.stock || 0;
+                                if (item.size && item.variants) {
+                                    const variant = item.variants.find(v => v.size === item.size);
+                                    if (variant) availableStock = variant.stock;
+                                }
+                                const isMaxStock = item.quantity >= availableStock;
+
                                 return (
                                     <div
                                         key={itemId}
@@ -152,23 +161,38 @@ export default function CartPage() {
 
                                             <div className="flex items-end justify-between mt-3">
                                                 {/* Quantity Controls */}
-                                                <div className="flex items-center gap-1">
-                                                    <button
-                                                        onClick={() => updateQuantity(itemId, item.quantity - 1, item.size)}
-                                                        disabled={item.quantity <= 1}
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                                                    >
-                                                        <Minus className="w-3 h-3" />
-                                                    </button>
-                                                    <span className="w-10 h-8 flex items-center justify-center text-sm font-semibold text-secondary bg-gray-50 rounded-lg">
-                                                        {item.quantity}
-                                                    </span>
-                                                    <button
-                                                        onClick={() => updateQuantity(itemId, item.quantity + 1, item.size)}
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer"
-                                                    >
-                                                        <Plus className="w-3 h-3" />
-                                                    </button>
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => updateQuantity(itemId, item.quantity - 1, item.size)}
+                                                            disabled={item.quantity <= 1}
+                                                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                                        >
+                                                            <Minus className="w-3 h-3" />
+                                                        </button>
+                                                        <span className="w-10 h-8 flex items-center justify-center text-sm font-semibold text-secondary bg-gray-50 rounded-lg">
+                                                            {item.quantity}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (isMaxStock) {
+                                                                    toast.error('Out of stock', {
+                                                                        duration: 2000,
+                                                                        position: 'bottom-center',
+                                                                        style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '12px' },
+                                                                    });
+                                                                    return;
+                                                                }
+                                                                updateQuantity(itemId, item.quantity + 1, item.size);
+                                                            }}
+                                                            className={`w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-gray-100 transition-colors cursor-pointer ${isMaxStock ? 'opacity-40 cursor-not-allowed bg-gray-50' : ''}`}
+                                                        >
+                                                            <Plus className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                    {isMaxStock && (
+                                                        <p className="text-[10px] text-danger font-medium animate-pulse">Out of stock</p>
+                                                    )}
                                                 </div>
 
                                                 {/* Item Total */}

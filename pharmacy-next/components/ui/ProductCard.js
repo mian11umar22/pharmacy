@@ -32,7 +32,22 @@ const ProductCard = ({ product }) => {
             return
         }
 
-        addToCart(product)
+        const wasAdded = addToCart(product)
+        
+        if (!wasAdded) {
+            toast.error('Out of stock', {
+                duration: 2000,
+                position: 'bottom-center',
+                style: {
+                    borderRadius: '10px',
+                    background: '#1B3A4B',
+                    color: '#fff',
+                    fontSize: '14px',
+                },
+            })
+            return
+        }
+
         setAdded(true)
         toast.success(`${product.name} added to cart!`, {
             duration: 2000,

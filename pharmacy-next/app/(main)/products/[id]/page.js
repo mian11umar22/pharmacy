@@ -68,11 +68,22 @@ export default function ProductDetailPage({ params: paramsPromise }) {
             return
         }
 
+        let addedCount = 0;
         for (let i = 0; i < quantity; i++) {
-            addToCart({ ...product, size: selectedSize })
+            const wasAdded = addToCart({ ...product, size: selectedSize })
+            if (wasAdded) addedCount++;
         }
+
+        if (addedCount === 0) {
+            toast.error('Could not add to cart. Stock limit reached.', {
+                position: 'bottom-center',
+                style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' }
+            })
+            return;
+        }
+
         setAdded(true)
-        toast.success(`${quantity}x ${product.name} added to cart!`, {
+        toast.success(`${addedCount}x ${product.name} added to cart!`, {
             duration: 2000,
             position: 'bottom-center',
             style: {
@@ -96,10 +107,15 @@ export default function ProductDetailPage({ params: paramsPromise }) {
             return
         }
 
+        let addedCount = 0;
         for (let i = 0; i < quantity; i++) {
-            addToCart({ ...product, size: selectedSize })
+            const wasAdded = addToCart({ ...product, size: selectedSize })
+            if (wasAdded) addedCount++;
         }
-        router.push('/cart')
+        
+        if (addedCount > 0) {
+            router.push('/cart')
+        }
     }
 
     if (isLoading) {
@@ -274,14 +290,25 @@ export default function ProductDetailPage({ params: paramsPromise }) {
                                         {quantity}
                                     </span>
                                     <button
-                                        onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
+                                        onClick={() => {
+                                            const currentMaxStock = selectedVariant ? selectedVariant.stock : (product.stock || 0);
+                                            if (quantity >= currentMaxStock) {
+                                                toast.error('Out of stock', {
+                                                    style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '12px' }
+                                                });
+                                                return;
+                                            }
+                                            setQuantity(quantity + 1);
+                                        }}
                                         className="w-12 h-12 flex items-center justify-center hover:bg-white transition-colors cursor-pointer text-secondary disabled:opacity-30"
-                                        disabled={quantity >= (product.stock || 99)}
+                                        disabled={quantity >= (selectedVariant ? selectedVariant.stock : (product.stock || 0))}
                                     >
                                         <Plus className="w-4 h-4" />
                                     </button>
                                 </div>
-                                <p className="text-xs text-text-secondary ml-2 font-medium">Maximum 10 units per order</p>
+                                <p className="text-xs text-text-secondary ml-2 font-medium">
+                                    {(selectedVariant ? selectedVariant.stock : (product.stock || 0)) <= 0 ? 'Out of stock' : `${selectedVariant ? selectedVariant.stock : (product.stock || 0)} available`}
+                                </p>
                             </div>
                         </div>
 
