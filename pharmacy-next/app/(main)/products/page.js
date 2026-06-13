@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowUpDown, ChevronRight, ChevronDown, X, Search, Loader2 } from 'lucide-react'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronDown, X, Search, Loader2 } from 'lucide-react'
 import ProductCard from '@/components/ui/ProductCard'
 
 const PRODUCTS_PER_PAGE = 12
@@ -27,6 +27,44 @@ const ProductsContent = () => {
     const [totalProducts, setTotalProducts] = useState(0)
     const [isLoading, setIsLoading] = useState(true)
     const [isCategoriesLoading, setIsCategoriesLoading] = useState(true)
+
+    const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE)
+
+    const getPageNumbers = () => {
+        const pages = []
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i)
+            return pages
+        }
+        
+        pages.push(1)
+        
+        if (pageParam > 3) {
+            pages.push('...')
+        }
+        
+        const start = Math.max(2, pageParam - 1)
+        const end = Math.min(totalPages - 1, pageParam + 1)
+        
+        let adjustedStart = start
+        let adjustedEnd = end
+        if (pageParam <= 3) {
+            adjustedEnd = 4
+        } else if (pageParam >= totalPages - 2) {
+            adjustedStart = totalPages - 3
+        }
+        
+        for (let i = adjustedStart; i <= adjustedEnd; i++) {
+            pages.push(i)
+        }
+        
+        if (pageParam < totalPages - 2) {
+            pages.push('...')
+        }
+        
+        pages.push(totalPages)
+        return pages
+    }
 
     // Sidebar expanded state
     const [expandedCats, setExpandedCats] = useState(categoryParam ? [categoryParam] : [])
@@ -291,17 +329,63 @@ const ProductsContent = () => {
                                     ))}
                                 </div>
 
-                                {totalProducts > PRODUCTS_PER_PAGE && (
-                                    <div className="flex justify-center mt-10 gap-2">
-                                        {Array.from({ length: Math.ceil(totalProducts / PRODUCTS_PER_PAGE) }).map((_, i) => (
-                                            <button
-                                                key={i}
-                                                onClick={() => updateURL({ page: (i + 1).toString() })}
-                                                className={`w-10 h-10 rounded-lg border font-semibold transition-all ${pageParam === i + 1 ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-secondary border-border hover:border-primary'}`}
-                                            >
-                                                {i + 1}
-                                            </button>
-                                        ))}
+                                {totalPages > 1 && (
+                                    <div className="flex flex-wrap items-center justify-center mt-10 gap-2">
+                                        {/* Previous Page Button */}
+                                        <button
+                                            onClick={() => pageParam > 1 && updateURL({ page: (pageParam - 1).toString() })}
+                                            disabled={pageParam === 1}
+                                            className={`w-10 h-10 rounded-lg border flex items-center justify-center font-semibold transition-all ${
+                                                pageParam === 1
+                                                    ? 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
+                                                    : 'bg-white text-secondary border-border hover:border-primary hover:text-primary cursor-pointer'
+                                            }`}
+                                            aria-label="Previous Page"
+                                        >
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+
+                                        {/* Page Numbers & Ellipses */}
+                                        {getPageNumbers().map((page, index) => {
+                                            if (page === '...') {
+                                                return (
+                                                    <span
+                                                        key={`ellipsis-${index}`}
+                                                        className="w-10 h-10 flex items-center justify-center text-text-secondary font-medium"
+                                                    >
+                                                        ...
+                                                    </span>
+                                                )
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={page}
+                                                    onClick={() => updateURL({ page: page.toString() })}
+                                                    className={`w-10 h-10 rounded-lg border font-semibold transition-all cursor-pointer ${
+                                                        pageParam === page
+                                                            ? 'bg-primary text-white border-primary shadow-md'
+                                                            : 'bg-white text-secondary border-border hover:border-primary'
+                                                    }`}
+                                                >
+                                                    {page}
+                                                </button>
+                                            )
+                                        })}
+
+                                        {/* Next Page Button */}
+                                        <button
+                                            onClick={() => pageParam < totalPages && updateURL({ page: (pageParam + 1).toString() })}
+                                            disabled={pageParam === totalPages}
+                                            className={`w-10 h-10 rounded-lg border flex items-center justify-center font-semibold transition-all ${
+                                                pageParam === totalPages
+                                                    ? 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
+                                                    : 'bg-white text-secondary border-border hover:border-primary hover:text-primary cursor-pointer'
+                                            }`}
+                                            aria-label="Next Page"
+                                        >
+                                            <ChevronRight className="w-5 h-5" />
+                                        </button>
                                     </div>
                                 )}
                             </>
