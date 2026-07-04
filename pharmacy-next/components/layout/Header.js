@@ -8,6 +8,7 @@ import Image from 'next/image'
 import { useCart } from '../../context/CartContext'
 import CategoryBar from './CategoryBar'
 import TrackOrderModal from '../ui/TrackOrderModal'
+import InstallAppPrompt from '../ui/InstallAppPrompt'
 
 import { useAuth } from '../../context/AuthContext'
 
@@ -91,6 +92,10 @@ const Header = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
                             <span className="text-xs mt-0.5">Shop</span>
                         </Link>
+
+                        <div className="hidden md:block">
+                            <InstallAppPrompt type="button" />
+                        </div>
 
                         <button 
                             onClick={() => setIsTrackingModalOpen(true)}
@@ -255,6 +260,13 @@ const Header = () => {
                         >
                             🛍️ My Cart ({cartCount})
                         </Link>
+                        
+                        <div className="px-2">
+                            <InstallAppPrompt 
+                                type="button" 
+                                className="w-full flex justify-center items-center gap-2 bg-primary text-white hover:bg-primary-dark px-3 py-3 rounded-lg text-base font-bold transition-colors cursor-pointer shadow-md"
+                            />
+                        </div>
                         <div className="border-t border-border pt-3 mt-3">
                             <div className="flex flex-col gap-2 text-sm text-text-secondary px-3">
                                 <span className="font-semibold">Need Help?</span>

@@ -3,6 +3,7 @@ import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
+import InstallAppPrompt from "@/components/ui/InstallAppPrompt";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -37,6 +38,16 @@ export const metadata = {
     locale: 'en_PK',
     type: 'website',
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: "Hope Pharmacy",
+  },
+};
+
+export const viewport = {
+  themeColor: "#0D9E71",
 };
 
 // =============================================
@@ -128,6 +139,8 @@ export default function RootLayout({ children }) {
           <AuthProvider>
             <CartProvider>
               {children}
+              <InstallAppPrompt type="banner" />
+              <InstallAppPrompt type="floating" />
               <Toaster position="bottom-right" />
             </CartProvider>
           </AuthProvider>
