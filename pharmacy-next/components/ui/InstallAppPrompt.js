@@ -105,24 +105,28 @@ export default function InstallAppPrompt({ type = "banner", className }) {
   if (type === "banner" && showBanner) {
     return (
       <>
-        {/* Adjusted bottom position to bottom-20 for mobile to prevent overlapping with bottom navigation */}
-        <div className="fixed bottom-20 left-4 right-4 md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:w-[400px] bg-white border border-border shadow-hover rounded-xl p-4 z-50 animate-fade-up flex items-center gap-4">
-          <div className="w-12 h-12 relative flex-shrink-0 bg-primary/5 rounded-lg p-1">
-            <Image src="/icons/icon-192x192.png" alt="Hope Pharmacy" fill className="object-contain" />
+        <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] md:w-[400px] bg-white rounded-2xl shadow-2xl p-3 sm:p-4 z-[100] border border-border animate-fade-in flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+            <Image src="/icons/icon-192x192.png" alt="Hope Pharmacy" width={40} height={40} className="rounded-xl shadow-sm flex-shrink-0 sm:w-[48px] sm:h-[48px] object-contain" />
+            <div className="min-w-0">
+              <h3 className="font-bold text-sm sm:text-base text-secondary truncate">Hope Pharmacy App</h3>
+              <p className="text-xs text-text-secondary truncate hidden sm:block">Fast, reliable, and always with you.</p>
+            </div>
           </div>
-          <div className="flex-grow">
-            <h4 className="text-sm font-bold text-secondary m-0">Hope Pharmacy App</h4>
-            <p className="text-xs text-text-secondary m-0">Fast, reliable, and always with you.</p>
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <button
+              onClick={handleInstallClick}
+              className="bg-primary text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold hover:bg-primary-dark transition-colors whitespace-nowrap"
+            >
+              GET
+            </button>
+            <button
+              onClick={() => setShowBanner(false)}
+              className="p-1.5 sm:p-2 text-text-secondary hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+            >
+              <X size={18} className="sm:w-5 sm:h-5" />
+            </button>
           </div>
-          <button
-            onClick={handleInstallClick}
-            className="bg-primary text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors whitespace-nowrap"
-          >
-            GET
-          </button>
-          <button onClick={() => setShowBanner(false)} className="text-gray-400 hover:text-gray-600 p-1">
-            <X size={20} />
-          </button>
         </div>
         {isIOS && showIOSModal && <IOSModal onClose={() => setShowIOSModal(false)} />}
       </>
