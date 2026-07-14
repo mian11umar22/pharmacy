@@ -1,3 +1,4 @@
+// Trigger Vercel Build for Env Vars
 import mongoose from 'mongoose'
 
 const aiUsageSchema = new mongoose.Schema({
