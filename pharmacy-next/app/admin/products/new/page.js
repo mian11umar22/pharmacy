@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Upload, Loader2, Trash2, Plus } from 'lucide-react'
+import { ArrowLeft, Upload, Loader2, Trash2, Plus, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 
@@ -17,6 +17,7 @@ export default function AddProductPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false)
     const [categories, setCategories] = useState([])
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState('')
@@ -210,6 +211,39 @@ export default function AddProductPage() {
         }
     }
 
+    const handleGenerateAI = async () => {
+        if (!form.name) {
+            toast.error('Please enter a Product Name first', { style: toastStyle })
+            return
+        }
+
+        setIsGeneratingAI(true)
+        try {
+            const catName = categories.find(c => c._id === form.category)?.name || ''
+            
+            const res = await fetch('/api/admin/generate-description', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: form.name,
+                    category: catName,
+                })
+            })
+            const data = await res.json()
+            
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to generate')
+            }
+            
+            update('description', data.description)
+            toast.success('Description generated successfully!', { style: toastStyle })
+        } catch (error) {
+            toast.error(error.message, { style: toastStyle })
+        } finally {
+            setIsGeneratingAI(false)
+        }
+    }
+
     if (isLoading) {
         return (
             <div className="min-h-[400px] flex flex-col items-center justify-center text-text-secondary">
@@ -245,10 +279,21 @@ export default function AddProductPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-secondary mb-1.5">Description</label>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-sm font-semibold text-secondary">Description</label>
+                            <button
+                                type="button"
+                                onClick={handleGenerateAI}
+                                disabled={isGeneratingAI}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                            >
+                                {isGeneratingAI ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                                {isGeneratingAI ? 'Generating...' : 'Write with AI'}
+                            </button>
+                        </div>
                         <textarea
                             placeholder="Product description..."
-                            rows="3"
+                            rows="5"
                             value={form.description}
                             onChange={(e) => update('description', e.target.value)}
                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none"
