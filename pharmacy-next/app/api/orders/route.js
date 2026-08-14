@@ -128,10 +128,12 @@ export async function POST(request) {
             }
         }
 
-        // Send emails (non-blocking)
+        // Send emails (awaited so the serverless function doesn't exit before they complete)
         console.log(`🛒 Order created: ${order.orderNumber}. Sending notifications...`)
-        sendOrderConfirmation(order, userEmail).catch(err => console.error('Confirmation email error:', err))
-        sendAdminNewOrderNotification(order).catch(err => console.error('Admin notification email error:', err))
+        await Promise.all([
+            sendOrderConfirmation(order, userEmail).catch(err => console.error('Confirmation email error:', err)),
+            sendAdminNewOrderNotification(order).catch(err => console.error('Admin notification email error:', err)),
+        ])
 
         return NextResponse.json({ success: true, order }, { status: 201 })
     } catch (error) {
