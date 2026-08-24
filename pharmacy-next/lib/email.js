@@ -158,7 +158,7 @@ export async function sendAdminNewOrderNotification(order) {
             </div>
             
             <div style="margin-top: 25px; text-align: center;">
-                <a href="${process.env.NEXT_PUBLIC_BASE_URL}/admin/orders/${order._id}" 
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/orders/${order._id}"
                    style="background: #16a34a; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                    View Order in Dashboard
                 </a>

@@ -17,7 +17,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Product name is required for generation.' }, { status: 400 })
         }
 
-        // 2. Check Rate Limit (10 per day)
+        // 2. Check Rate Limit (300 per day)
         const today = new Date().toISOString().split('T')[0]
         let usage = await AiUsage.findOne({ date: today })
 
@@ -25,8 +25,8 @@ export async function POST(request) {
             usage = await AiUsage.create({ date: today, count: 0 })
         }
 
-        if (usage.count >= 10) {
-            return NextResponse.json({ error: 'Daily AI limit reached (10/10). Please try again tomorrow.' }, { status: 429 })
+        if (usage.count >= 300) {
+            return NextResponse.json({ error: 'Daily AI limit reached (300/300). Please try again tomorrow.' }, { status: 429 })
         }
 
         // 3. Call Official Gemini API
