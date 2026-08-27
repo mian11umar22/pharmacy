@@ -127,7 +127,8 @@ export async function POST(request) {
                 await Product.bulkWrite(salesUpdates).catch(err => console.error('SalesCount update error:', err))
             }
         }
-
+// Dummy comment to force Vercel build
+console.log(`🛒 Order created: ${order.orderNumber}. Sending notifications...`)
         // Send emails (awaited so the serverless function doesn't exit before they complete)
         console.log(`🛒 Order created: ${order.orderNumber}. Sending notifications...`)
         await Promise.all([
