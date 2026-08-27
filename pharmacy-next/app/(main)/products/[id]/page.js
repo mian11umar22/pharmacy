@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { ShoppingCart, Minus, Plus, ChevronRight, ArrowLeft, Package, Check, Loader2, AlertCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import ProductCard from '@/components/ui/ProductCard'
+import PrescriptionUploadModal from '@/components/ui/PrescriptionUploadModal'
 import toast from 'react-hot-toast'
 
 export default function ProductDetailPage({ params: paramsPromise }) {
@@ -22,6 +23,8 @@ export default function ProductDetailPage({ params: paramsPromise }) {
     const [quantity, setQuantity] = useState(1)
     const [selectedSize, setSelectedSize] = useState('')
     const [added, setAdded] = useState(false)
+    const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
+    const [pendingAction, setPendingAction] = useState(null) // 'cart' | 'buy'
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -61,6 +64,17 @@ export default function ProductDetailPage({ params: paramsPromise }) {
         if (id) fetchProduct()
     }, [id])
 
+    // Pushes `quantity` units into the cart, optionally tagging each with the
+    // uploaded prescription so it rides along into the checkout payload.
+    const addItemsToCart = (prescriptionData) => {
+        let addedCount = 0;
+        for (let i = 0; i < quantity; i++) {
+            const wasAdded = addToCart({ ...product, size: selectedSize, ...(prescriptionData || {}) })
+            if (wasAdded) addedCount++;
+        }
+        return addedCount
+    }
+
     const handleAddToCart = () => {
         if (!product) return
         if (product.variants?.length > 0 && !selectedSize) {
@@ -68,11 +82,13 @@ export default function ProductDetailPage({ params: paramsPromise }) {
             return
         }
 
-        let addedCount = 0;
-        for (let i = 0; i < quantity; i++) {
-            const wasAdded = addToCart({ ...product, size: selectedSize })
-            if (wasAdded) addedCount++;
+        if (product.requiresPrescription) {
+            setPendingAction('cart')
+            setShowPrescriptionModal(true)
+            return
         }
+
+        const addedCount = addItemsToCart()
 
         if (addedCount === 0) {
             toast.error('Could not add to cart. Stock limit reached.', {
@@ -107,15 +123,42 @@ export default function ProductDetailPage({ params: paramsPromise }) {
             return
         }
 
-        let addedCount = 0;
-        for (let i = 0; i < quantity; i++) {
-            const wasAdded = addToCart({ ...product, size: selectedSize })
-            if (wasAdded) addedCount++;
+        if (product.requiresPrescription) {
+            setPendingAction('buy')
+            setShowPrescriptionModal(true)
+            return
         }
-        
+
+        const addedCount = addItemsToCart()
         if (addedCount > 0) {
             router.push('/cart')
         }
+    }
+
+    const handlePrescriptionUploaded = (prescriptionData) => {
+        const addedCount = addItemsToCart(prescriptionData)
+
+        if (addedCount === 0) {
+            toast.error('Could not add to cart. Stock limit reached.', {
+                position: 'bottom-center',
+                style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' }
+            })
+            return
+        }
+
+        if (pendingAction === 'buy') {
+            router.push('/cart')
+        } else {
+            setAdded(true)
+            toast.success(`${addedCount}x ${product.name} added to cart!`, {
+                duration: 2000,
+                position: 'bottom-center',
+                style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' },
+                iconTheme: { primary: '#0D9E71', secondary: '#fff' },
+            })
+            setTimeout(() => setAdded(false), 2000)
+        }
+        setPendingAction(null)
     }
 
     if (isLoading) {
@@ -312,6 +355,14 @@ export default function ProductDetailPage({ params: paramsPromise }) {
                             </div>
                         </div>
 
+                        {/* Prescription Required Notice */}
+                        {product.requiresPrescription && (
+                            <div className="flex items-center gap-2 mb-4 px-4 py-2.5 bg-warning/10 border border-warning/30 rounded-xl">
+                                <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
+                                <p className="text-xs font-bold text-warning">Prescription required — you&apos;ll be asked to upload one before this is added to your cart</p>
+                            </div>
+                        )}
+
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 mb-10">
                             <button
@@ -376,6 +427,13 @@ export default function ProductDetailPage({ params: paramsPromise }) {
                     </div>
                 )}
             </div>
+
+            <PrescriptionUploadModal
+                isOpen={showPrescriptionModal}
+                onClose={() => { setShowPrescriptionModal(false); setPendingAction(null) }}
+                onUploaded={handlePrescriptionUploaded}
+                productName={product.name}
+            />
         </div>
     )
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Banknote, ArrowLeft, Loader2, Tag, X } from 'lucide-react'
+import { ChevronRight, Banknote, ArrowLeft, Loader2, Tag, X, ZoomIn } from 'lucide-react'
 import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,6 +11,7 @@ import { z } from 'zod'
 import { useCart } from '@/context/CartContext'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
+import PrescriptionPreviewModal from '@/components/ui/PrescriptionPreviewModal'
 
 // ── Zod Validation Schema ──────────────────────────────
 const checkoutSchema = z.object({
@@ -69,6 +70,7 @@ export default function CheckoutPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isHydrated, setIsHydrated] = useState(false)
     const [isRedirectingSuccess, setIsRedirectingSuccess] = useState(false)
+    const [previewUrl, setPreviewUrl] = useState(null)
 
     // Coupon state
     const [couponCode, setCouponCode] = useState('')
@@ -190,7 +192,9 @@ export default function CheckoutPage() {
                         price: item.price,
                         quantity: item.quantity,
                         image: item.image,
-                        size: item.size || ''
+                        size: item.size || '',
+                        prescriptionUrl: item.prescriptionUrl || undefined,
+                        prescriptionPublicId: item.prescriptionPublicId || undefined,
                     })),
                     subtotal,
                     deliveryFee: delivery,
@@ -424,6 +428,25 @@ export default function CheckoutPage() {
                                                 {item.size && <p className="text-[10px] font-black text-primary uppercase">Size: {item.size}</p>}
                                             </div>
                                         </div>
+                                        {item.prescriptionUrl && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setPreviewUrl(item.prescriptionUrl)}
+                                                className="relative flex-shrink-0 cursor-zoom-in hover:opacity-80 transition-opacity"
+                                                title="Tap to view prescription"
+                                            >
+                                                <Image
+                                                    src={item.prescriptionUrl}
+                                                    alt="Prescription"
+                                                    width={40}
+                                                    height={40}
+                                                    className="w-10 h-10 rounded-md object-cover border border-success/30"
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-md">
+                                                    <ZoomIn className="w-4 h-4 text-white" />
+                                                </div>
+                                            </button>
+                                        )}
                                         <p className="text-sm font-semibold text-secondary flex-shrink-0">
                                             Rs. {item.price * item.quantity}
                                         </p>
@@ -550,6 +573,12 @@ export default function CheckoutPage() {
 
             {/* Bottom spacer for mobile sticky bar */}
             <div className="lg:hidden h-20"></div>
+
+            <PrescriptionPreviewModal
+                isOpen={!!previewUrl}
+                onClose={() => setPreviewUrl(null)}
+                imageUrl={previewUrl}
+            />
         </div>
     )
 }

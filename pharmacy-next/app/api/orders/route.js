@@ -5,6 +5,7 @@ import User from '@/models/User'
 import Coupon from '@/models/Coupon'
 import { requireAuth } from '@/lib/auth'
 import { sendOrderConfirmation, sendAdminNewOrderNotification } from '@/lib/email'
+import Product from '@/models/Product'
 
 export async function GET(request) {
     try {
@@ -93,6 +94,28 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Email is required for order' }, { status: 400 })
         }
 
+        // Independently re-verify prescription requirements against the DB —
+        // the cart/checkout UI's own gating can be bypassed by calling this
+        // route directly, so it must never be trusted alone.
+        if (!Array.isArray(body.items) || body.items.length === 0) {
+            return NextResponse.json({ error: 'Order must contain at least one item' }, { status: 400 })
+        }
+
+        const productIds = body.items.map(item => item.product).filter(Boolean)
+        const products = await Product.find({ _id: { $in: productIds } }).select('name requiresPrescription')
+        const productMap = new Map(products.map(p => [p._id.toString(), p]))
+
+        const missingPrescriptionItems = body.items.filter(item => {
+            const product = productMap.get(String(item.product))
+            return product?.requiresPrescription && !item.prescriptionUrl
+        })
+
+        if (missingPrescriptionItems.length > 0) {
+            return NextResponse.json({
+                error: `A prescription image is required for: ${missingPrescriptionItems.map(i => i.name).join(', ')}`,
+            }, { status: 400 })
+        }
+
         const order = await Order.create({
             user: userId,
             items: body.items,
@@ -116,7 +139,6 @@ export async function POST(request) {
 
         // Increment salesCount for each product in the order
         if (body.items && Array.isArray(body.items)) {
-            const Product = (await import('@/models/Product')).default
             const salesUpdates = body.items.map(item => ({
                 updateOne: {
                     filter: { _id: item.product },

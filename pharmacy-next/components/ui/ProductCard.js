@@ -7,33 +7,17 @@ import { useCart } from '@/context/CartContext'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import PrescriptionUploadModal from '@/components/ui/PrescriptionUploadModal'
 
 const ProductCard = ({ product }) => {
     const router = useRouter()
     const { addToCart } = useCart()
     const [added, setAdded] = useState(false)
+    const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
 
-    const handleAddToCart = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
+    const completeAddToCart = (prescriptionData) => {
+        const wasAdded = addToCart({ ...product, ...(prescriptionData || {}) })
 
-        // If product has sizes, redirect to details page to pick one
-        if (product.variants?.length > 0) {
-            router.push(`/products/${product._id}`)
-            toast('Please select a size first!', {
-                icon: '📏',
-                style: {
-                    borderRadius: '10px',
-                    background: '#1B3A4B',
-                    color: '#fff',
-                    fontSize: '14px',
-                }
-            })
-            return
-        }
-
-        const wasAdded = addToCart(product)
-        
         if (!wasAdded) {
             toast.error('Out of stock', {
                 duration: 2000,
@@ -64,6 +48,33 @@ const ProductCard = ({ product }) => {
             },
         })
         setTimeout(() => setAdded(false), 1500)
+    }
+
+    const handleAddToCart = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+
+        // If product has sizes, redirect to details page to pick one
+        if (product.variants?.length > 0) {
+            router.push(`/products/${product._id}`)
+            toast('Please select a size first!', {
+                icon: '📏',
+                style: {
+                    borderRadius: '10px',
+                    background: '#1B3A4B',
+                    color: '#fff',
+                    fontSize: '14px',
+                }
+            })
+            return
+        }
+
+        if (product.requiresPrescription) {
+            setShowPrescriptionModal(true)
+            return
+        }
+
+        completeAddToCart()
     }
 
     return (
@@ -142,6 +153,16 @@ const ProductCard = ({ product }) => {
                     </button>
                 </div>
             </div>
+
+            <PrescriptionUploadModal
+                isOpen={showPrescriptionModal}
+                onClose={() => setShowPrescriptionModal(false)}
+                onUploaded={(prescriptionData) => {
+                    setShowPrescriptionModal(false)
+                    completeAddToCart(prescriptionData)
+                }}
+                productName={product.name}
+            />
         </div>
     )
 }

@@ -15,6 +15,8 @@ const orderItemSchema = new mongoose.Schema({
     },
     image: String,
     size: String,
+    prescriptionUrl: String,
+    prescriptionPublicId: String,
 })
 
 const orderSchema = new mongoose.Schema({

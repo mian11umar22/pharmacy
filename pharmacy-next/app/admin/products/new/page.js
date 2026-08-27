@@ -34,6 +34,7 @@ export default function AddProductPage() {
         imagePublicId: '',
         salesCount: '',
         variants: [], // { size: '', price: '', stock: '' }
+        requiresPrescription: false,
     })
 
     const fetchCategories = useCallback(async () => {
@@ -65,6 +66,7 @@ export default function AddProductPage() {
                     imagePublicId: p.imagePublicId || '',
                     salesCount: p.salesCount || 0,
                     variants: p.variants || [],
+                    requiresPrescription: p.requiresPrescription || false,
                 })
                 if (p.image) setImagePreview(p.image)
             } else {
@@ -194,7 +196,8 @@ export default function AddProductPage() {
                         stock: Number(v.stock)
                     })),
                     image: imageUrl,
-                    imagePublicId: imagePublicId
+                    imagePublicId: imagePublicId,
+                    requiresPrescription: form.requiresPrescription
                 })
             })
 
@@ -407,6 +410,19 @@ export default function AddProductPage() {
                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                         />
                     </div>
+
+                    <label className="flex items-center gap-3 p-4 bg-background rounded-xl border border-border cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={form.requiresPrescription}
+                            onChange={(e) => update('requiresPrescription', e.target.checked)}
+                            className="w-5 h-5 rounded accent-primary cursor-pointer"
+                        />
+                        <div>
+                            <p className="text-sm font-semibold text-secondary">Requires Prescription</p>
+                            <p className="text-[10px] text-text-secondary">Customers must upload a prescription image before adding this to cart</p>
+                        </div>
+                    </label>
 
                     <div>
                         <label className="block text-sm font-semibold text-secondary mb-1.5">Sales Count (Popularity)</label>

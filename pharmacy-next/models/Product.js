@@ -65,6 +65,10 @@ const productSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
     },
+    requiresPrescription: {
+        type: Boolean,
+        default: false,
+    },
 }, {
     timestamps: true,
 })

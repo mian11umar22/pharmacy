@@ -2,9 +2,10 @@
 
 import { use, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Phone, MapPin, CreditCard, Loader2 } from 'lucide-react'
+import { ArrowLeft, Phone, MapPin, CreditCard, Loader2, FileImage, ZoomIn, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
+import PrescriptionPreviewModal from '@/components/ui/PrescriptionPreviewModal'
 
 const statusOptions = [
     { value: 'pending', label: 'Pending', color: 'bg-warning/10 text-warning border-warning/30' },
@@ -20,6 +21,7 @@ export default function AdminOrderDetailPage({ params }) {
     const [order, setOrder] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isUpdating, setIsUpdating] = useState(false)
+    const [previewUrl, setPreviewUrl] = useState(null)
 
     const fetchOrder = useCallback(async () => {
         try {
@@ -157,6 +159,14 @@ export default function AdminOrderDetailPage({ params }) {
                                             {item.size && <span className="text-[10px] font-black text-primary uppercase">Size: {item.size}</span>}
                                         </div>
                                     </div>
+                                    {item.prescriptionUrl && (
+                                        <span
+                                            title="Prescription attached — see Prescription Verification below"
+                                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-success/10 text-success text-[9px] font-bold uppercase flex-shrink-0"
+                                        >
+                                            <FileImage className="w-2.5 h-2.5" /> Rx
+                                        </span>
+                                    )}
                                     <p className="text-sm font-bold text-secondary flex-shrink-0">
                                         Rs. {(item.quantity * item.price).toLocaleString()}
                                     </p>
@@ -179,6 +189,45 @@ export default function AdminOrderDetailPage({ params }) {
                             </div>
                         </div>
                     </div>
+
+                    {/* Prescription Verification */}
+                    {order.items?.some(item => item.prescriptionUrl) && (
+                        <div className="bg-white rounded-xl border border-border p-5">
+                            <h2 className="font-bold text-secondary text-sm mb-4 flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4 text-success" /> Prescription Verification
+                            </h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {order.items
+                                    .filter(item => item.prescriptionUrl)
+                                    .map((item, idx) => (
+                                        <div key={idx} className="border border-border rounded-xl overflow-hidden">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPreviewUrl(item.prescriptionUrl)}
+                                                className="relative block w-full aspect-[4/3] bg-gray-50 cursor-zoom-in group"
+                                                title="View full size"
+                                            >
+                                                <Image
+                                                    src={item.prescriptionUrl}
+                                                    alt={`Prescription for ${item.name}`}
+                                                    fill
+                                                    className="object-contain"
+                                                    sizes="(max-width: 640px) 100vw, 320px"
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
+                                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 bg-white/90 text-secondary text-xs font-bold px-3 py-1.5 rounded-full">
+                                                        <ZoomIn className="w-3.5 h-3.5" /> View Full Size
+                                                    </span>
+                                                </div>
+                                            </button>
+                                            <p className="px-3 py-2 text-xs text-text-secondary truncate border-t border-border">
+                                                For: <span className="font-medium text-secondary">{item.name}</span>
+                                            </p>
+                                        </div>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
 
                     {order.notes && (
                         <div className="bg-white rounded-xl border border-border p-5">
@@ -217,6 +266,12 @@ export default function AdminOrderDetailPage({ params }) {
                     </div>
                 </div>
             </div>
+
+            <PrescriptionPreviewModal
+                isOpen={!!previewUrl}
+                onClose={() => setPreviewUrl(null)}
+                imageUrl={previewUrl}
+            />
         </div>
     )
 }

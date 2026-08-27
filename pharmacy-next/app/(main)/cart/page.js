@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Trash2, Minus, Plus, ChevronRight, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
+import { Trash2, Minus, Plus, ChevronRight, ShoppingBag, ArrowLeft, Loader2, FileImage, ZoomIn } from 'lucide-react'
 import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
 import toast from 'react-hot-toast'
+import PrescriptionPreviewModal from '@/components/ui/PrescriptionPreviewModal'
 
 export default function CartPage() {
     const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart()
@@ -14,6 +15,7 @@ export default function CartPage() {
 
     const [deliveryFee, setDeliveryFee] = useState(0)
     const [isLoadingFee, setIsLoadingFee] = useState(true)
+    const [previewUrl, setPreviewUrl] = useState(null)
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -149,6 +151,30 @@ export default function CartPage() {
                                                     {item.size && (
                                                         <p className="text-[10px] font-bold text-primary mt-0.5 uppercase tracking-wider">Size: {item.size}</p>
                                                     )}
+                                                    {item.prescriptionUrl && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPreviewUrl(item.prescriptionUrl)}
+                                                            className="inline-flex items-center gap-2 mt-1.5 hover:opacity-80 transition-opacity cursor-zoom-in"
+                                                            title="Tap to view prescription"
+                                                        >
+                                                            <div className="relative">
+                                                                <Image
+                                                                    src={item.prescriptionUrl}
+                                                                    alt="Prescription"
+                                                                    width={44}
+                                                                    height={44}
+                                                                    className="w-11 h-11 rounded-md object-cover border border-success/30"
+                                                                />
+                                                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-md">
+                                                                    <ZoomIn className="w-4 h-4 text-white" />
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-[10px] font-bold text-success flex items-center gap-0.5">
+                                                                <FileImage className="w-3 h-3" /> View Prescription
+                                                            </span>
+                                                        </button>
+                                                    )}
                                                 </div>
                                                 <button
                                                     onClick={() => handleRemove(item)}
@@ -283,6 +309,12 @@ export default function CartPage() {
 
             {/* Bottom spacer for mobile sticky bar */}
             <div className="lg:hidden h-20"></div>
+
+            <PrescriptionPreviewModal
+                isOpen={!!previewUrl}
+                onClose={() => setPreviewUrl(null)}
+                imageUrl={previewUrl}
+            />
         </div>
     )
 }
