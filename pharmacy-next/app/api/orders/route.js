@@ -75,7 +75,7 @@ export async function POST(request) {
             const auth = await requireAuth(request)
             if (!auth.error) {
                 userId = auth.user._id
-                userEmail = auth.user.email
+                userEmail = body.shippingAddress?.email || auth.user.email
             }
         } catch (e) {
             // Not logged in or auth error — continue as guest
