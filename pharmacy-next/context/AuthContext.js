@@ -7,6 +7,19 @@ const AuthContext = createContext()
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [coinBalance, setCoinBalance] = useState(null)
+
+    const fetchCoinBalance = async () => {
+        try {
+            const res = await fetch('/api/rewards/balance')
+            const data = await res.json()
+            if (res.ok) {
+                setCoinBalance(data.coinBalance ?? 0)
+            }
+        } catch (error) {
+            console.error('Failed to fetch coin balance:', error)
+        }
+    }
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -15,6 +28,7 @@ export function AuthProvider({ children }) {
                 const data = await res.json()
                 if (res.ok && data.user) {
                     setUser(data.user)
+                    fetchCoinBalance()
                 }
             } catch (error) {
                 console.error('Failed to fetch user:', error)
@@ -27,6 +41,7 @@ export function AuthProvider({ children }) {
 
     const login = (userData) => {
         setUser(userData)
+        fetchCoinBalance()
     }
 
     const logout = async () => {
@@ -42,7 +57,7 @@ export function AuthProvider({ children }) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, setUser, loading, login, logout }}>
+        <AuthContext.Provider value={{ user, setUser, loading, login, logout, coinBalance, fetchCoinBalance }}>
             {children}
         </AuthContext.Provider>
     )

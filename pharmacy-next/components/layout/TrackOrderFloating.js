@@ -16,7 +16,7 @@ const TrackOrderFloating = () => {
         <>
             <button
                 onClick={() => setIsModalOpen(true)}
-                className={`fixed ${isActionBarPage ? 'bottom-[140px]' : 'bottom-[145px]'} md:bottom-[104px] right-6 z-[99] flex items-center bg-transparent md:bg-white md:p-2 md:pr-5 rounded-full md:shadow-2xl md:border md:border-border hover:translate-y-[-4px] transition-all group active:scale-95 animate-fade-in`}
+                className={`fixed ${isActionBarPage ? 'bottom-[210px]' : 'bottom-[215px]'} md:bottom-[160px] right-6 z-[99] flex items-center bg-transparent md:bg-white md:p-2 md:pr-5 rounded-full md:shadow-2xl md:border md:border-border hover:translate-y-[-4px] transition-all group active:scale-95 animate-fade-in`}
             >
                 <div className="w-14 h-14 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center text-white shadow-xl md:shadow-lg group-hover:rotate-12 transition-transform border-[3px] border-white md:border-none">
                     <MapPin className="w-6 h-6 md:w-5 md:h-5" />

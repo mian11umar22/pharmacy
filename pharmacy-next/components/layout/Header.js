@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search, ShoppingCart, User, Menu, X, ChevronDown, LogOut, MapPin } from 'lucide-react'
+import { Search, ShoppingCart, User, Menu, X, ChevronDown, LogOut, MapPin, Coins } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useCart } from '../../context/CartContext'
@@ -19,7 +19,7 @@ const Header = () => {
     const [marqueeText, setMarqueeText] = useState('Order Now: 03054964343 | 💊 Genuine Medicines at Your Doorstep | WhatsApp us your Prescription')
     const router = useRouter()
     const { getCartCount } = useCart()
-    const { user, logout } = useAuth()
+    const { user, logout, coinBalance } = useAuth()
 
     const cartCount = getCartCount()
 
@@ -88,6 +88,18 @@ const Header = () => {
 
                     {/* Icons Navigation */}
                     <div className="flex items-center gap-6">
+                        {user && coinBalance !== null && (
+                            <Link
+                                href="/account/coins"
+                                className="hidden md:flex items-center gap-1 hover:opacity-80 transition-opacity"
+                            >
+                                <div className="w-5 h-5 rounded-full bg-yellow-400 ring-2 ring-yellow-200 flex items-center justify-center flex-shrink-0">
+                                    <Coins className="w-3 h-3 text-white" />
+                                </div>
+                                <span className="font-bold text-sm text-secondary">{coinBalance}</span>
+                            </Link>
+                        )}
+
                         <Link href="/products" className="hidden md:flex flex-col items-center text-text-secondary hover:text-primary transition">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
                             <span className="text-xs mt-0.5">Shop</span>
@@ -155,6 +167,18 @@ const Header = () => {
                                     <User className="w-5 h-5" />
                                 </div>
                                 <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Login</span>
+                            </Link>
+                        )}
+
+                        {user && coinBalance !== null && (
+                            <Link
+                                href="/account/coins"
+                                className="md:hidden flex items-center gap-1"
+                            >
+                                <div className="w-5 h-5 rounded-full bg-yellow-400 ring-2 ring-yellow-200 flex items-center justify-center flex-shrink-0">
+                                    <Coins className="w-3 h-3 text-white" />
+                                </div>
+                                <span className="font-bold text-sm text-secondary">{coinBalance}</span>
                             </Link>
                         )}
 

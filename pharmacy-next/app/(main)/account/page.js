@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Package, LogOut, ChevronRight, User as UserIcon, Loader2 } from 'lucide-react'
+import { Package, LogOut, ChevronRight, User as UserIcon, Loader2, Coins } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
 
@@ -13,6 +13,8 @@ export default function AccountPage() {
 
     const [stats, setStats] = useState({ totalOrders: 0, totalDelivered: 0 })
     const [loadingStats, setLoadingStats] = useState(true)
+    const [coinBalance, setCoinBalance] = useState(0)
+    const [loadingCoins, setLoadingCoins] = useState(true)
 
     useEffect(() => {
         if (!loading && !user) {
@@ -36,6 +38,24 @@ export default function AccountPage() {
             }
         }
         fetchStats()
+    }, [user])
+
+    useEffect(() => {
+        const fetchCoinBalance = async () => {
+            if (!user) return
+            try {
+                const res = await fetch('/api/rewards/balance')
+                const data = await res.json()
+                if (res.ok) {
+                    setCoinBalance(data.coinBalance || 0)
+                }
+            } catch (error) {
+                console.error('Failed to fetch coin balance:', error)
+            } finally {
+                setLoadingCoins(false)
+            }
+        }
+        fetchCoinBalance()
     }, [user])
 
     if (loading) return (
@@ -76,15 +96,20 @@ export default function AccountPage() {
 
             <div className="max-w-3xl mx-auto px-4 -mt-4">
                 {/* Quick Stats */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="grid grid-cols-3 gap-3 mb-6">
                     {[
-                        { label: 'Total Orders', value: stats.totalOrders, emoji: '📦' },
-                        { label: 'Delivered', value: stats.totalDelivered, emoji: '✅' },
+                        { label: 'Total Orders', value: stats.totalOrders, emoji: '📦', loading: loadingStats },
+                        { label: 'Delivered', value: stats.totalDelivered, emoji: '✅', loading: loadingStats },
+                        { label: 'Coins', value: coinBalance, emoji: null, icon: Coins, loading: loadingCoins },
                     ].map((stat) => (
                         <div key={stat.label} className="bg-white rounded-xl border border-border p-3 text-center shadow-sm">
-                            <span className="text-lg">{stat.emoji}</span>
+                            {stat.icon ? (
+                                <stat.icon className="w-4.5 h-4.5 text-primary inline-block" />
+                            ) : (
+                                <span className="text-lg">{stat.emoji}</span>
+                            )}
                             <p className="text-xl font-bold text-secondary mt-1">
-                                {loadingStats ? '...' : stat.value}
+                                {stat.loading ? '...' : stat.value}
                             </p>
                             <p className="text-[11px] text-text-secondary">{stat.label}</p>
                         </div>
@@ -117,6 +142,20 @@ export default function AccountPage() {
                         <div className="flex-1">
                             <p className="font-semibold text-secondary text-sm">My Orders</p>
                             <p className="text-xs text-text-secondary">Track & view order history</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </Link>
+
+                    <Link
+                        href="/account/coins"
+                        className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors border-b border-border"
+                    >
+                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <Coins className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-semibold text-secondary text-sm">My Coins & Rewards</p>
+                            <p className="text-xs text-text-secondary">View balance, refer friends & history</p>
                         </div>
                         <ChevronRight className="w-4 h-4 text-gray-400" />
                     </Link>

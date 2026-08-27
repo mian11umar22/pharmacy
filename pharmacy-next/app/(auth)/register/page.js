@@ -1,16 +1,18 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/context/AuthContext'
 
 import Image from 'next/image'
 
-export default function RegisterPage() {
+function RegisterPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const refCode = searchParams.get('ref') || ''
     const { login } = useAuth()
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -60,6 +62,7 @@ export default function RegisterPage() {
                     email: formData.email,
                     phone: formData.phone,
                     password: formData.password,
+                    referralCode: refCode,
                 }),
             })
 
@@ -298,5 +301,13 @@ export default function RegisterPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function RegisterPageWrapper() {
+    return (
+        <Suspense fallback={null}>
+            <RegisterPage />
+        </Suspense>
     )
 }

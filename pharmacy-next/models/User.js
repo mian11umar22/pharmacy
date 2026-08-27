@@ -44,6 +44,23 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
+    coinBalance: {
+        type: Number,
+        default: 0,
+        required: false,
+    },
+    referralCode: {
+        type: String,
+        unique: true,
+        sparse: true,
+        required: false,
+    },
+    referredBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+        required: false,
+    },
 }, {
     timestamps: true,
 })

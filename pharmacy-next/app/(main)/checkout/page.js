@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Banknote, ArrowLeft, Loader2, Tag, X, ZoomIn } from 'lucide-react'
+import { ChevronRight, Banknote, ArrowLeft, Loader2, Tag, X, ZoomIn, Coins } from 'lucide-react'
 import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -78,6 +78,13 @@ export default function CheckoutPage() {
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
     const [couponError, setCouponError] = useState('')
 
+    // Coins state
+    const [coinBalance, setCoinBalance] = useState(0)
+    const [coinsToRedeem, setCoinsToRedeem] = useState(0)
+    const [appliedCoins, setAppliedCoins] = useState(null) // { coinsUsed, discountAmount }
+    const [isApplyingCoins, setIsApplyingCoins] = useState(false)
+    const [coinError, setCoinError] = useState(null)
+
     // Hydration check
     useEffect(() => {
         setIsHydrated(true)
@@ -100,10 +107,28 @@ export default function CheckoutPage() {
         fetchFee()
     }, [])
 
+    // Fetch user's coin balance
+    useEffect(() => {
+        const fetchCoinBalance = async () => {
+            if (!user) return
+            try {
+                const res = await fetch('/api/rewards/balance')
+                const data = await res.json()
+                if (res.ok) {
+                    setCoinBalance(data.coinBalance || 0)
+                }
+            } catch (error) {
+                console.error('Fetch coin balance error:', error)
+            }
+        }
+        fetchCoinBalance()
+    }, [user])
+
     const subtotal = getCartTotal()
     const delivery = cartItems.length > 0 ? deliveryFee : 0
     const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0
-    const total = subtotal + delivery - discountAmount
+    const coinsDiscount = appliedCoins ? appliedCoins.discountAmount : 0
+    const total = subtotal + delivery - discountAmount - coinsDiscount
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return
@@ -135,6 +160,44 @@ export default function CheckoutPage() {
         setAppliedCoupon(null)
         setCouponCode('')
         setCouponError('')
+    }
+
+    const handleApplyCoins = async () => {
+        const coins = Number(coinsToRedeem)
+        if (!coins || coins <= 0) {
+            setCoinError('Enter a valid number of coins')
+            return
+        }
+        setCoinError(null)
+        setIsApplyingCoins(true)
+        try {
+            const res = await fetch('/api/rewards/redeem', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ coinsToRedeem: coins })
+            })
+            const data = await res.json()
+            if (res.ok) {
+                setAppliedCoins({ coinsUsed: data.coinsUsed, discountAmount: data.discountAmount })
+                setCoinBalance(data.remainingBalance)
+                setCoinError(null)
+                toast.success(`${data.coinsUsed} coins applied!`, { position: 'top-center' })
+            } else {
+                setCoinError(data.error || 'Failed to apply coins')
+            }
+        } catch (error) {
+            setCoinError('Failed to apply coins. Please try again.')
+        } finally {
+            setIsApplyingCoins(false)
+        }
+    }
+
+    const handleRemoveCoins = () => {
+        // Coins are already deducted server-side on apply — removing here
+        // only clears the UI/checkout state, it does not refund the balance.
+        setAppliedCoins(null)
+        setCoinsToRedeem(0)
+        setCoinError(null)
     }
 
     const {
@@ -201,6 +264,7 @@ export default function CheckoutPage() {
                     total,
                     couponCode: appliedCoupon?.code || null,
                     discountAmount: appliedCoupon?.discountAmount || 0,
+                    coinDiscountAmount: appliedCoins?.discountAmount || 0,
                     shippingAddress: {
                         name: data.fullName,
                         email: data.email,
@@ -502,6 +566,59 @@ export default function CheckoutPage() {
                                 )}
                             </div>
 
+                            {/* Use Your Coins */}
+                            {user && (
+                                <div className="border-t border-border pt-4 mb-4">
+                                    <p className="text-xs font-semibold text-secondary mb-2 flex items-center gap-1.5">
+                                        <Coins className="w-3.5 h-3.5 text-primary" />
+                                        Use Your Coins
+                                    </p>
+                                    {appliedCoins ? (
+                                        <div className="flex items-center justify-between bg-success/5 border border-success/20 rounded-xl px-3 py-2.5">
+                                            <p className="text-xs font-bold text-success">
+                                                🪙 {appliedCoins.coinsUsed} coins applied = Rs. {appliedCoins.discountAmount} off
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveCoins}
+                                                className="text-text-secondary hover:text-danger transition-colors cursor-pointer"
+                                                title="Remove coins"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-xs text-text-secondary mb-2">Available: {coinBalance} coins</p>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    value={coinsToRedeem}
+                                                    onChange={(e) => { setCoinsToRedeem(e.target.value); setCoinError(null) }}
+                                                    min="0"
+                                                    max={coinBalance}
+                                                    placeholder="0"
+                                                    className={`flex-1 px-3 py-2 rounded-xl border ${coinError ? 'border-danger' : 'border-border'} text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleApplyCoins}
+                                                    disabled={isApplyingCoins || !coinsToRedeem || coinBalance === 0}
+                                                    className="px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                                >
+                                                    {isApplyingCoins ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Apply Coins'}
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                    {coinError && (
+                                        <p className="text-danger text-xs mt-1.5 flex items-center gap-1">
+                                            <X className="w-3 h-3" /> {coinError}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Totals */}
                             <div className="border-t border-border pt-4 space-y-2 text-sm">
                                 <div className="flex justify-between">
@@ -516,6 +633,12 @@ export default function CheckoutPage() {
                                     <div className="flex justify-between">
                                         <span className="text-success font-medium">Discount</span>
                                         <span className="font-semibold text-success">- Rs. {appliedCoupon.discountAmount}</span>
+                                    </div>
+                                )}
+                                {appliedCoins && (
+                                    <div className="flex justify-between">
+                                        <span className="text-success font-medium">Coins Discount</span>
+                                        <span className="font-semibold text-success">- Rs. {appliedCoins.discountAmount}</span>
                                     </div>
                                 )}
                                 <div className="border-t border-border pt-3 mt-3">

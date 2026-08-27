@@ -3,6 +3,8 @@ import dbConnect from '@/lib/mongodb'
 import Order from '@/models/Order'
 import User from '@/models/User'
 import Coupon from '@/models/Coupon'
+import CoinTransaction from '@/models/CoinTransaction'
+import Setting from '@/models/Setting'
 import { requireAuth } from '@/lib/auth'
 import { sendOrderConfirmation, sendAdminNewOrderNotification } from '@/lib/email'
 import Product from '@/models/Product'
@@ -128,6 +130,34 @@ export async function POST(request) {
             couponCode: body.couponCode || null,
             discountAmount: body.discountAmount || 0,
         })
+
+        // Award shopping coins to logged-in users only (guest checkouts have no account to credit)
+        try {
+            if (userId) {
+                const coinsPerHundredSetting = await Setting.findOne({ key: 'coins_per_100_rupees' })
+                const coinsPerHundred = coinsPerHundredSetting ? coinsPerHundredSetting.value : 1
+
+                const coins = Math.floor(order.total / 100) * coinsPerHundred
+
+                if (coins > 0) {
+                    await CoinTransaction.create({
+                        userId,
+                        type: 'earned',
+                        reason: 'shopping',
+                        coins,
+                        orderId: order._id,
+                    })
+
+                    const orderUser = await User.findById(userId)
+                    if (orderUser) {
+                        orderUser.coinBalance = (orderUser.coinBalance || 0) + coins
+                        await orderUser.save()
+                    }
+                }
+            }
+        } catch (coinError) {
+            console.error('Shopping coin award error:', coinError)
+        }
 
         // Increment coupon usedCount if a coupon was applied
         if (body.couponCode) {
