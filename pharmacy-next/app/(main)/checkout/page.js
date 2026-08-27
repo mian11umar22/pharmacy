@@ -61,6 +61,8 @@ const checkoutSchema = z.object({
 })
 // ────────────────────────────────────────────────────────
 
+const MAX_COINS_PER_ORDER_DEFAULT = 500
+
 export default function CheckoutPage() {
     const router = useRouter()
     const { cartItems, getCartTotal, clearCart } = useCart()
@@ -80,6 +82,7 @@ export default function CheckoutPage() {
 
     // Coins state
     const [coinBalance, setCoinBalance] = useState(0)
+    const [coinToRupeeRate, setCoinToRupeeRate] = useState(1)
     const [coinsToRedeem, setCoinsToRedeem] = useState(0)
     const [appliedCoins, setAppliedCoins] = useState(null) // { coinsUsed, discountAmount }
     const [isApplyingCoins, setIsApplyingCoins] = useState(false)
@@ -116,6 +119,7 @@ export default function CheckoutPage() {
                 const data = await res.json()
                 if (res.ok) {
                     setCoinBalance(data.coinBalance || 0)
+                    setCoinToRupeeRate(data.coin_to_rupee_rate || 1)
                 }
             } catch (error) {
                 console.error('Fetch coin balance error:', error)
@@ -162,39 +166,30 @@ export default function CheckoutPage() {
         setCouponError('')
     }
 
-    const handleApplyCoins = async () => {
+    const handleApplyCoins = () => {
         const coins = Number(coinsToRedeem)
         if (!coins || coins <= 0) {
             setCoinError('Enter a valid number of coins')
             return
         }
-        setCoinError(null)
-        setIsApplyingCoins(true)
-        try {
-            const res = await fetch('/api/rewards/redeem', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ coinsToRedeem: coins })
-            })
-            const data = await res.json()
-            if (res.ok) {
-                setAppliedCoins({ coinsUsed: data.coinsUsed, discountAmount: data.discountAmount })
-                setCoinBalance(data.remainingBalance)
-                setCoinError(null)
-                toast.success(`${data.coinsUsed} coins applied!`, { position: 'top-center' })
-            } else {
-                setCoinError(data.error || 'Failed to apply coins')
-            }
-        } catch (error) {
-            setCoinError('Failed to apply coins. Please try again.')
-        } finally {
-            setIsApplyingCoins(false)
+        if (coins > coinBalance) {
+            setCoinError('You do not have enough coins')
+            return
         }
+        if (coins > MAX_COINS_PER_ORDER_DEFAULT) {
+            setCoinError(`Cannot redeem more than ${MAX_COINS_PER_ORDER_DEFAULT} coins per order`)
+            return
+        }
+
+        // Pure UI validation — no API call. Coins are only deducted server-side
+        // when the order is actually placed, so nothing is lost if the user
+        // abandons checkout.
+        setCoinError(null)
+        setAppliedCoins({ coinsUsed: coins, discountAmount: coins * coinToRupeeRate })
+        toast.success(`${coins} coins applied!`, { position: 'top-center' })
     }
 
     const handleRemoveCoins = () => {
-        // Coins are already deducted server-side on apply — removing here
-        // only clears the UI/checkout state, it does not refund the balance.
         setAppliedCoins(null)
         setCoinsToRedeem(0)
         setCoinError(null)
@@ -265,6 +260,7 @@ export default function CheckoutPage() {
                     couponCode: appliedCoupon?.code || null,
                     discountAmount: appliedCoupon?.discountAmount || 0,
                     coinDiscountAmount: appliedCoins?.discountAmount || 0,
+                    coinsToRedeem: appliedCoins?.coinsUsed || 0,
                     shippingAddress: {
                         name: data.fullName,
                         email: data.email,
@@ -590,6 +586,7 @@ export default function CheckoutPage() {
                                     ) : (
                                         <>
                                             <p className="text-xs text-text-secondary mb-2">Available: {coinBalance} coins</p>
+                                            <p className="text-xs text-text-secondary mb-2">1 Coin = Rs. {coinToRupeeRate} discount</p>
                                             <div className="flex gap-2">
                                                 <input
                                                     type="number"

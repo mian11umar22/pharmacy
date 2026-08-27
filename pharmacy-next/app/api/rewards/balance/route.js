@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 import CoinTransaction from '@/models/CoinTransaction'
+import Setting from '@/models/Setting'
 import { requireAuth } from '@/lib/auth'
 
 // Generate a short unique referral code: first 4 letters of name (uppercase) + 4 random digits
@@ -48,11 +49,15 @@ export async function GET(request) {
         const host = request.headers.get('host')
         const referralLink = `https://${host}/register?ref=${user.referralCode}`
 
+        const rateSetting = await Setting.findOne({ key: 'coin_to_rupee_rate' })
+        const coinToRupeeRate = rateSetting ? rateSetting.value : 1
+
         return NextResponse.json({
             coinBalance: user.coinBalance || 0,
             referralCode: user.referralCode || null,
             referralLink,
             transactions,
+            coin_to_rupee_rate: coinToRupeeRate,
         })
     } catch (error) {
         console.error('Get rewards balance error:', error)

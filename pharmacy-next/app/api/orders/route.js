@@ -131,6 +131,37 @@ export async function POST(request) {
             discountAmount: body.discountAmount || 0,
         })
 
+        // Redeem coins toward this order's discount (logged-in users only) —
+        // deduction happens here, at order placement, not when "Apply" was
+        // clicked, so nothing is lost if the user abandons checkout.
+        try {
+            const coinsToRedeem = Number(body.coinsToRedeem) || 0
+            if (coinsToRedeem > 0 && userId) {
+                const coinToRupeeSetting = await Setting.findOne({ key: 'coin_to_rupee_rate' })
+                const coinToRupeeRate = coinToRupeeSetting ? coinToRupeeSetting.value : 1
+
+                const maxCoinsSetting = await Setting.findOne({ key: 'max_coins_per_order' })
+                const maxCoinsPerOrder = maxCoinsSetting ? maxCoinsSetting.value : 500
+
+                const redeemUser = await User.findById(userId)
+
+                if (redeemUser && coinsToRedeem <= (redeemUser.coinBalance || 0) && coinsToRedeem <= maxCoinsPerOrder) {
+                    await CoinTransaction.create({
+                        userId,
+                        type: 'redeemed',
+                        reason: 'shopping',
+                        coins: coinsToRedeem,
+                        orderId: order._id,
+                    })
+
+                    redeemUser.coinBalance = (redeemUser.coinBalance || 0) - coinsToRedeem
+                    await redeemUser.save()
+                }
+            }
+        } catch (redeemError) {
+            console.error('Coin redemption error:', redeemError)
+        }
+
         // Award shopping coins to logged-in users only (guest checkouts have no account to credit)
         try {
             if (userId) {
