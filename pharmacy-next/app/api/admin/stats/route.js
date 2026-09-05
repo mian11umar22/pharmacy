@@ -31,7 +31,13 @@ export async function GET(request) {
         // 5. Total Customers
         const totalUsers = await User.countDocuments({ role: 'customer' })
 
-        // 6. Recent Orders (Top 5)
+        // 6. Low Stock Products (stock > 0 and <= 10)
+        const lowStockProducts = await Product.countDocuments({ stock: { $gt: 0, $lte: 10 } })
+
+        // 7. Out of Stock Products (stock = 0)
+        const outOfStockProducts = await Product.countDocuments({ stock: 0 })
+
+        // 8. Recent Orders (Top 5)
         const recentOrders = await Order.find()
             .populate('user', 'name')
             .sort({ createdAt: -1 })
@@ -44,7 +50,9 @@ export async function GET(request) {
                 totalRevenue,
                 pendingOrders,
                 totalProducts,
-                totalUsers
+                totalUsers,
+                lowStockProducts,
+                outOfStockProducts
             },
             recentOrders: recentOrders.map(o => ({
                 id: o.orderNumber || o._id,

@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
+import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ArrowUpDown, AlertTriangle, PackageX } from 'lucide-react'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 
@@ -20,7 +21,16 @@ const SORT_OPTIONS = [
     { value: 'popularity', label: 'Best Selling' },
 ]
 
+const STOCK_TABS = [
+    { value: 'all', label: 'All Products' },
+    { value: 'low', label: 'Low Stock' },
+    { value: 'out', label: 'Out of Stock' },
+]
+
 export default function AdminProductsPage() {
+    const searchParams = useSearchParams()
+    const initialStockFilter = searchParams.get('stockFilter') || 'all'
+
     const [products, setProducts] = useState([])
     const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(true)
@@ -29,6 +39,8 @@ export default function AdminProductsPage() {
     const [totalProducts, setTotalProducts] = useState(0)
     const [selectedCategory, setSelectedCategory] = useState('')
     const [sortBy, setSortBy] = useState('newest')
+    const [stockFilter, setStockFilter] = useState(initialStockFilter)
+    const [stockCounts, setStockCounts] = useState({ low: 0, out: 0 })
     const [selectedIds, setSelectedIds] = useState([])
     const [showBulkModal, setShowBulkModal] = useState(false)
     const [bulkDiscount, setBulkDiscount] = useState('')
@@ -50,7 +62,28 @@ export default function AdminProductsPage() {
         fetchCategories()
     }, [])
 
-    const fetchProducts = useCallback(async (page = 1, search = '', category = '', sort = 'newest') => {
+    // Fetch stock counts for the tab badges
+    const fetchStockCounts = useCallback(async () => {
+        try {
+            const [lowRes, outRes] = await Promise.all([
+                fetch('/api/products?stockFilter=low&limit=1'),
+                fetch('/api/products?stockFilter=out&limit=1'),
+            ])
+            const [lowData, outData] = await Promise.all([lowRes.json(), outRes.json()])
+            setStockCounts({
+                low: lowData.total || 0,
+                out: outData.total || 0,
+            })
+        } catch (error) {
+            console.error('Failed to load stock counts')
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchStockCounts()
+    }, [fetchStockCounts])
+
+    const fetchProducts = useCallback(async (page = 1, search = '', category = '', sort = 'newest', stock = 'all') => {
         try {
             setLoading(true)
             const params = new URLSearchParams()
@@ -60,6 +93,7 @@ export default function AdminProductsPage() {
             params.set('sort', sort)
             if (search) params.set('search', search)
             if (category) params.set('category', category)
+            if (stock && stock !== 'all') params.set('stockFilter', stock)
 
             const res = await fetch(`/api/products?${params.toString()}`)
             const data = await res.json()
@@ -76,14 +110,14 @@ export default function AdminProductsPage() {
 
     // Initial load
     useEffect(() => {
-        fetchProducts(1, '', '', 'newest')
-    }, [fetchProducts])
+        fetchProducts(1, '', '', 'newest', initialStockFilter)
+    }, [fetchProducts, initialStockFilter])
 
     // Search with debounce — resets to page 1
     useEffect(() => {
         const timer = setTimeout(() => {
             setCurrentPage(1)
-            fetchProducts(1, searchQuery, selectedCategory, sortBy)
+            fetchProducts(1, searchQuery, selectedCategory, sortBy, stockFilter)
         }, 400)
         return () => clearTimeout(timer)
     }, [searchQuery, fetchProducts]) // eslint-disable-line
@@ -92,20 +126,27 @@ export default function AdminProductsPage() {
     const handleCategoryChange = (cat) => {
         setSelectedCategory(cat)
         setCurrentPage(1)
-        fetchProducts(1, searchQuery, cat, sortBy)
+        fetchProducts(1, searchQuery, cat, sortBy, stockFilter)
     }
 
     // Sort change
     const handleSortChange = (sort) => {
         setSortBy(sort)
         setCurrentPage(1)
-        fetchProducts(1, searchQuery, selectedCategory, sort)
+        fetchProducts(1, searchQuery, selectedCategory, sort, stockFilter)
+    }
+
+    // Stock filter tab change
+    const handleStockFilterChange = (filter) => {
+        setStockFilter(filter)
+        setCurrentPage(1)
+        fetchProducts(1, searchQuery, selectedCategory, sortBy, filter)
     }
 
     const handlePageChange = (page) => {
         if (page < 1 || page > totalPages) return
         setCurrentPage(page)
-        fetchProducts(page, searchQuery, selectedCategory, sortBy)
+        fetchProducts(page, searchQuery, selectedCategory, sortBy, stockFilter)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
@@ -115,7 +156,8 @@ export default function AdminProductsPage() {
             const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
             if (!res.ok) throw new Error('Delete failed')
             toast.success('Product deleted', { style: { borderRadius: '10px', background: '#1B3A4B', color: '#fff', fontSize: '14px' } })
-            fetchProducts(currentPage, searchQuery, selectedCategory, sortBy)
+            fetchProducts(currentPage, searchQuery, selectedCategory, sortBy, stockFilter)
+            fetchStockCounts()
         } catch (error) {
             toast.error(error.message)
         }
@@ -157,7 +199,7 @@ export default function AdminProductsPage() {
             setShowBulkModal(false)
             setBulkDiscount('')
             setSelectedIds([])
-            fetchProducts(currentPage, searchQuery, selectedCategory, sortBy)
+            fetchProducts(currentPage, searchQuery, selectedCategory, sortBy, stockFilter)
         } catch (error) {
             toast.error(error.message)
         } finally {
@@ -173,6 +215,25 @@ export default function AdminProductsPage() {
         if (end - start < 4) start = Math.max(1, end - 4)
         for (let i = start; i <= end; i++) pages.push(i)
         return pages
+    }
+
+    // Stock status badge helper
+    const StockBadge = ({ stock }) => {
+        if (stock === 0) {
+            return (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-danger px-1.5 py-0.5 rounded ml-1.5 whitespace-nowrap">
+                    Out of Stock
+                </span>
+            )
+        }
+        if (stock <= 10) {
+            return (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-warning px-1.5 py-0.5 rounded ml-1.5 whitespace-nowrap">
+                    Low Stock
+                </span>
+            )
+        }
+        return null
     }
 
     return (
@@ -292,6 +353,47 @@ export default function AdminProductsPage() {
                 </div>
             </div>
 
+            {/* Stock Filter Tabs */}
+            <div className="flex items-center gap-2 mb-4">
+                {STOCK_TABS.map((tab) => {
+                    const isActive = stockFilter === tab.value
+                    let count = null
+                    if (tab.value === 'low') count = stockCounts.low
+                    if (tab.value === 'out') count = stockCounts.out
+
+                    return (
+                        <button
+                            key={tab.value}
+                            onClick={() => handleStockFilterChange(tab.value)}
+                            className={`flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+                                isActive
+                                    ? tab.value === 'out'
+                                        ? 'bg-danger/10 text-danger border border-danger/20'
+                                        : tab.value === 'low'
+                                            ? 'bg-warning/10 text-warning border border-warning/20'
+                                            : 'bg-primary/10 text-primary border border-primary/20'
+                                    : 'bg-white text-text-secondary border border-border hover:border-gray-300'
+                            }`}
+                        >
+                            {tab.value === 'low' && <AlertTriangle className="w-3.5 h-3.5" />}
+                            {tab.value === 'out' && <PackageX className="w-3.5 h-3.5" />}
+                            {tab.label}
+                            {count !== null && (
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                    isActive
+                                        ? tab.value === 'out'
+                                            ? 'bg-danger/20 text-danger'
+                                            : 'bg-warning/20 text-warning'
+                                        : 'bg-gray-100 text-text-secondary'
+                                }`}>
+                                    {count}
+                                </span>
+                            )}
+                        </button>
+                    )
+                })}
+            </div>
+
             {/* Active filters indicator */}
             {(selectedCategory || searchQuery) && (
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -344,6 +446,7 @@ export default function AdminProductsPage() {
                                             </span>
                                         )}
                                         <span className="text-xs text-text-secondary">Stock: {product.stock}</span>
+                                        <StockBadge stock={product.stock} />
                                     </div>
                                 </div>
                             </div>
@@ -423,9 +526,12 @@ export default function AdminProductsPage() {
                                         )}
                                     </td>
                                     <td className="px-5 py-3.5">
-                                        <span className={`text-sm font-medium ${product.stock <= 10 ? 'text-danger' : 'text-secondary'}`}>
-                                            {product.stock}
-                                        </span>
+                                        <div className="flex items-center">
+                                            <span className={`text-sm font-medium ${product.stock <= 10 ? 'text-danger' : 'text-secondary'}`}>
+                                                {product.stock}
+                                            </span>
+                                            <StockBadge stock={product.stock} />
+                                        </div>
                                     </td>
                                     <td className="px-5 py-3.5">
                                         <div className="flex items-center gap-3 justify-center">

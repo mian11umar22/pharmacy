@@ -75,7 +75,10 @@ const productSchema = new mongoose.Schema({
 
 // Index for efficient queries
 productSchema.index({ category: 1, subcategory: 1, item: 1 })
-productSchema.index({ name: 'text', description: 'text' })
+productSchema.index(
+    { name: 'text', description: 'text' },
+    { weights: { name: 10, description: 1 }, name: 'product_text_index' }
+)
 productSchema.index({ isActive: 1, createdAt: -1 })
 
 // Force model re-registration in dev to handle schema changes

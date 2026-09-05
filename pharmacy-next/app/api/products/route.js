@@ -16,6 +16,7 @@ export async function GET(request) {
         const item = searchParams.get('item')
         const search = searchParams.get('search')
         const sort = searchParams.get('sort') || 'newest'
+        const stockFilter = searchParams.get('stockFilter') || 'all'
 
         // FIX: cap page to minimum 1 (prevents negative/zero page)
         const page = Math.max(1, parseInt(searchParams.get('page')) || 1)
@@ -38,23 +39,18 @@ export async function GET(request) {
         if (item) filter.item = item
 
         if (search) {
-            // FIX: cap input to 100 chars to prevent ReDoS attacks
+            // FIX: cap input to 100 chars to prevent abuse
             const rawSearch = search.trim().slice(0, 100)
+            filter.$text = { $search: rawSearch }
+        }
 
-            const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
-            // Split into individual tokens — "lac d" becomes ["lac", "d"]
-            // Each token becomes a lookahead so ALL tokens must appear somewhere in the string
-            // Order doesn't matter, missing letters in between don't break the match
-            // e.g. "lac d" → (?=.*lac)(?=.*d) → matches "Lacta-D" ✅
-            // e.g. "500 pan" → (?=.*500)(?=.*pan) → matches "Panadol 500mg" ✅
-            const tokens = rawSearch.split(/\s+/).filter(Boolean).map(escapeRegex)
-            const regexPattern = tokens.map(t => `(?=.*${t})`).join('')
-
-            filter.$or = [
-                { name: { $regex: regexPattern, $options: 'i' } },
-                { description: { $regex: regexPattern, $options: 'i' } },
-            ]
+        // Stock filter — only applied for admin views
+        if (isAdmin) {
+            if (stockFilter === 'low') {
+                filter.stock = { $gt: 0, $lte: 10 }
+            } else if (stockFilter === 'out') {
+                filter.stock = 0
+            }
         }
 
         // Sort options
@@ -77,9 +73,9 @@ export async function GET(request) {
 
         const skip = (page - 1) * limit
         const total = await Product.countDocuments(filter)
-        const products = await Product.find(filter)
+        const products = await Product.find(filter, search ? { score: { $meta: 'textScore' } } : {})
             .populate('category', 'name slug')
-            .sort(sortOptions[sortKey])
+            .sort(search ? { score: { $meta: 'textScore' } } : sortOptions[sortKey])
             .skip(skip)
             .limit(limit)
 

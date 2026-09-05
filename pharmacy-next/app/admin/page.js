@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 
 import Link from 'next/link'
-import { Package, ShoppingCart, TrendingUp, Users, ChevronRight, ArrowUpRight, Truck, Loader2 } from 'lucide-react'
+import { Package, ShoppingCart, TrendingUp, Users, ChevronRight, ArrowUpRight, Truck, Loader2, AlertTriangle, PackageX } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const statusConfig = {
@@ -25,7 +25,9 @@ export default function AdminDashboard() {
             totalRevenue: 0,
             pendingOrders: 0,
             totalProducts: 0,
-            totalUsers: 0
+            totalUsers: 0,
+            lowStockProducts: 0,
+            outOfStockProducts: 0
         },
         recentOrders: []
     })
@@ -191,6 +193,49 @@ export default function AdminDashboard() {
                     </button>
                 </div>
             </div>
+
+            {/* Low Stock Alert Widget */}
+            {(stats.lowStockProducts > 0 || stats.outOfStockProducts > 0) && (
+                <div className="bg-white rounded-xl border border-border p-5 mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center">
+                                <AlertTriangle className="w-4.5 h-4.5 text-warning" />
+                            </div>
+                            <div>
+                                <h2 className="font-bold text-secondary text-sm">Low Stock Alert</h2>
+                                <p className="text-xs text-text-secondary">Products that need restocking</p>
+                            </div>
+                        </div>
+                        <Link
+                            href="/admin/products?stockFilter=low"
+                            className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline"
+                        >
+                            View Low Stock <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="flex items-center gap-3 bg-warning/5 rounded-xl p-3.5 border border-warning/10">
+                            <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
+                                <AlertTriangle className="w-5 h-5 text-warning" />
+                            </div>
+                            <div>
+                                <p className="text-xl font-bold text-secondary">{stats.lowStockProducts}</p>
+                                <p className="text-xs text-text-secondary">Low Stock</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 bg-danger/5 rounded-xl p-3.5 border border-danger/10">
+                            <div className="w-10 h-10 rounded-xl bg-danger/10 flex items-center justify-center flex-shrink-0">
+                                <PackageX className="w-5 h-5 text-danger" />
+                            </div>
+                            <div>
+                                <p className="text-xl font-bold text-secondary">{stats.outOfStockProducts}</p>
+                                <p className="text-xs text-text-secondary">Out of Stock</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Recent Orders */}
             <div className="bg-white rounded-xl border border-border">
