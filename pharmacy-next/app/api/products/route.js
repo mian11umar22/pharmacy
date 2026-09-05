@@ -41,13 +41,15 @@ export async function GET(request) {
             // FIX: cap input to 100 chars to prevent ReDoS attacks
             const rawSearch = search.trim().slice(0, 100)
 
-            // Escape special regex characters
-            const escapeRegex = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-            const safeSearch = escapeRegex(rawSearch)
+            const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-            // FIX: use {0,3} instead of * to cap unlimited whitespace/hyphen matching
-            // "lacta d" → "lacta[\s\-]{0,3}d" — still matches "Lacta-D" but not exploit patterns
-            const regexPattern = safeSearch.replace(/\s+/g, '[\\s\\-]{0,3}')
+            // Split into individual tokens — "lac d" becomes ["lac", "d"]
+            // Each token becomes a lookahead so ALL tokens must appear somewhere in the string
+            // Order doesn't matter, missing letters in between don't break the match
+            // e.g. "lac d" → (?=.*lac)(?=.*d) → matches "Lacta-D" ✅
+            // e.g. "500 pan" → (?=.*500)(?=.*pan) → matches "Panadol 500mg" ✅
+            const tokens = rawSearch.split(/\s+/).filter(Boolean).map(escapeRegex)
+            const regexPattern = tokens.map(t => `(?=.*${t})`).join('')
 
             filter.$or = [
                 { name: { $regex: regexPattern, $options: 'i' } },
