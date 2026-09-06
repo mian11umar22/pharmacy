@@ -41,7 +41,16 @@ export async function GET(request) {
         if (search) {
             // FIX: cap input to 100 chars to prevent abuse
             const rawSearch = search.trim().slice(0, 100)
-            filter.$text = { $search: rawSearch }
+            const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+            // Split into individual tokens — e.g., "lac d" becomes ["lac", "d"]
+            const tokens = rawSearch.split(/[\s\-]+/).filter(Boolean).map(escapeRegex)
+
+            // MongoDB native $and: Each typed token must exist somewhere in the product name
+            // This handles partials ("nut" -> "Nutrifactor") AND scattered ("lac d" -> "Lacta-D")
+            filter.$and = tokens.map(token => ({
+                name: { $regex: token, $options: 'i' }
+            }))
         }
 
         // Stock filter — only applied for admin views
@@ -73,9 +82,9 @@ export async function GET(request) {
 
         const skip = (page - 1) * limit
         const total = await Product.countDocuments(filter)
-        const products = await Product.find(filter, search ? { score: { $meta: 'textScore' } } : {})
+        const products = await Product.find(filter)
             .populate('category', 'name slug')
-            .sort(search ? { score: { $meta: 'textScore' } } : sortOptions[sortKey])
+            .sort(sortOptions[sortKey])
             .skip(skip)
             .limit(limit)
 
@@ -107,6 +116,14 @@ export async function POST(request) {
             body.originalPrice = Math.round(body.price / (1 - body.discount / 100))
         } else {
             body.originalPrice = body.price
+        }
+
+        // Sync images array and primary image
+        if (Array.isArray(body.images) && body.images.length > 0) {
+            body.image = body.images[0].url
+            body.imagePublicId = body.images[0].publicId || ''
+        } else if (body.image) {
+            body.images = [{ url: body.image, publicId: body.imagePublicId || '' }]
         }
 
         const product = await Product.create(body)

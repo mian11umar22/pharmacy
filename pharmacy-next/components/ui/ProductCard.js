@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingCart, Check } from 'lucide-react'
+import { ShoppingCart, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
@@ -14,6 +14,13 @@ const ProductCard = ({ product }) => {
     const { addToCart } = useCart()
     const [added, setAdded] = useState(false)
     const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
+    const [activeImgIndex, setActiveImgIndex] = useState(0)
+
+    const imageList = (product.images && product.images.length > 0)
+        ? product.images.map(img => typeof img === 'string' ? img : img.url).filter(Boolean)
+        : (product.image ? [product.image] : [])
+
+    const currentDisplayImage = imageList[activeImgIndex] || product.image
 
     const completeAddToCart = (prescriptionData) => {
         const wasAdded = addToCart({ ...product, ...(prescriptionData || {}) })
@@ -93,18 +100,18 @@ const ProductCard = ({ product }) => {
                 )}
             </div>
 
-            {/* Image */}
+            {/* Image Container with Daraz-style Dot Navigation */}
             <Link
                 href={`/products/${product._id}`}
                 className="group block relative overflow-hidden rounded-xl bg-white aspect-[4/5] mb-3 md:mb-4 border border-border/20 p-2"
             >
                 <div className="relative w-full h-full flex items-center justify-center transform group-hover:scale-105 transition-transform duration-500">
-                    {product.image ? (
+                    {currentDisplayImage ? (
                         <Image
-                            src={product.image}
+                            src={currentDisplayImage}
                             alt={product.name}
                             fill
-                            className="object-contain"
+                            className="object-contain transition-all duration-300"
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                     ) : (
@@ -113,6 +120,61 @@ const ProductCard = ({ product }) => {
                         </div>
                     )}
                 </div>
+
+                {/* Arrow navigation for multi-image products */}
+                {imageList.length > 1 && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setActiveImgIndex(prev => (prev > 0 ? prev - 1 : imageList.length - 1))
+                            }}
+                            className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-secondary p-1 rounded-full shadow-md backdrop-blur-sm opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all cursor-pointer z-20 hover:scale-110"
+                            aria-label="Previous Image"
+                        >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setActiveImgIndex(prev => (prev < imageList.length - 1 ? prev + 1 : 0))
+                            }}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-secondary p-1 rounded-full shadow-md backdrop-blur-sm opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all cursor-pointer z-20 hover:scale-110"
+                            aria-label="Next Image"
+                        >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                    </>
+                )}
+
+                {/* Dots indicator for multi-image products (Daraz style) */}
+                {imageList.length > 1 && (
+                    <div className="absolute bottom-2 left-0 right-0 z-10 flex items-center justify-center gap-1 px-2 pointer-events-auto">
+                        {imageList.map((_, idx) => (
+                            <button
+                                key={idx}
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    setActiveImgIndex(idx)
+                                }}
+                                onMouseEnter={() => setActiveImgIndex(idx)}
+                                className={`transition-all duration-200 cursor-pointer ${
+                                    activeImgIndex === idx
+                                        ? 'w-4 h-1.5 bg-primary rounded-full shadow-sm'
+                                        : 'w-1.5 h-1.5 bg-gray-300 hover:bg-primary/60 rounded-full'
+                                }`}
+                                aria-label={`View image ${idx + 1}`}
+                            />
+                        ))}
+                    </div>
+                )}
             </Link>
 
             {/* Content */}

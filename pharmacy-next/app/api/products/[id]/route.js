@@ -32,19 +32,32 @@ export async function PUT(request, { params }) {
         if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
         await dbConnect()
-        const { id } = await params
-        const body = await request.json()
+        const existingProduct = await Product.findById(id)
+        if (!existingProduct) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
 
-        // Recalculate original price
-        if (body.discount > 0 && body.price) {
-            body.originalPrice = Math.round(body.price / (1 - body.discount / 100))
-        } else if (body.price) {
-            body.originalPrice = body.price
+        // Sync images array and primary image
+        if (Array.isArray(body.images) && body.images.length > 0) {
+            body.image = body.images[0].url
+            body.imagePublicId = body.images[0].publicId || ''
+        } else if (body.image) {
+            body.images = [{ url: body.image, publicId: body.imagePublicId || '' }]
+        }
+
+        // Cleanup removed images from Cloudinary
+        if (Array.isArray(body.images) && Array.isArray(existingProduct.images)) {
+            const newPublicIds = new Set(body.images.map(img => img.publicId).filter(Boolean))
+            for (const oldImg of existingProduct.images) {
+                if (oldImg.publicId && !newPublicIds.has(oldImg.publicId)) {
+                    try {
+                        await deleteImage(oldImg.publicId)
+                    } catch (e) {
+                        console.error('Failed to delete old image from Cloudinary:', e)
+                    }
+                }
+            }
         }
 
         const product = await Product.findByIdAndUpdate(id, body, { new: true, runValidators: true })
-        if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
-
         return NextResponse.json({ success: true, product })
     } catch (error) {
         console.error('Update product error:', error)
@@ -61,12 +74,22 @@ export async function DELETE(request, { params }) {
         await dbConnect()
         const { id } = await params
         
-        // Find product first to get imagePublicId
+        // Find product first to get image publicIds
         const product = await Product.findById(id)
         if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
 
-        // Delete from Cloudinary if publicId exists
-        if (product.imagePublicId) {
+        // Delete all associated images from Cloudinary
+        if (Array.isArray(product.images) && product.images.length > 0) {
+            for (const img of product.images) {
+                if (img.publicId) {
+                    try {
+                        await deleteImage(img.publicId)
+                    } catch (e) {
+                        console.error('Failed to delete image from Cloudinary:', e)
+                    }
+                }
+            }
+        } else if (product.imagePublicId) {
             await deleteImage(product.imagePublicId)
         }
 

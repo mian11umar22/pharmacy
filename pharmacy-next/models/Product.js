@@ -34,6 +34,10 @@ const productSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
+    images: [{
+        url: { type: String, required: true },
+        publicId: { type: String, default: '' },
+    }],
     salesCount: {
         type: Number,
         default: 0,

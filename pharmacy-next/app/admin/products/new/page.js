@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Upload, Loader2, Trash2, Plus, Sparkles } from 'lucide-react'
+import { ArrowLeft, Upload, Loader2, Trash2, Plus, Sparkles, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 
@@ -19,8 +19,7 @@ export default function AddProductPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [isGeneratingAI, setIsGeneratingAI] = useState(false)
     const [categories, setCategories] = useState([])
-    const [imageFile, setImageFile] = useState(null)
-    const [imagePreview, setImagePreview] = useState('')
+    const [images, setImages] = useState([]) // Array of { id, url, publicId, file }
 
     const [form, setForm] = useState({
         name: '',
@@ -31,7 +30,6 @@ export default function AddProductPage() {
         subcategory: '',
         item: '',
         stock: '',
-        imagePublicId: '',
         salesCount: '',
         variants: [], // { size: '', price: '', stock: '' }
         requiresPrescription: false,
@@ -63,12 +61,28 @@ export default function AddProductPage() {
                     subcategory: p.subcategory || '',
                     item: p.item || '',
                     stock: p.stock || '',
-                    imagePublicId: p.imagePublicId || '',
                     salesCount: p.salesCount || 0,
                     variants: p.variants || [],
                     requiresPrescription: p.requiresPrescription || false,
                 })
-                if (p.image) setImagePreview(p.image)
+
+                if (Array.isArray(p.images) && p.images.length > 0) {
+                    setImages(p.images.map((img, i) => ({
+                        id: `existing-${i}-${Date.now()}`,
+                        url: img.url,
+                        publicId: img.publicId || '',
+                        file: null
+                    })))
+                } else if (p.image) {
+                    setImages([{
+                        id: `existing-0-${Date.now()}`,
+                        url: p.image,
+                        publicId: p.imagePublicId || '',
+                        file: null
+                    }])
+                } else {
+                    setImages([])
+                }
             } else {
                 toast.error(data.error || 'Product not found')
                 router.push('/admin/products')
@@ -119,17 +133,48 @@ export default function AddProductPage() {
         setForm(prev => ({ ...prev, variants: newVariants }))
     }
 
+    // Image handlers (Max 4)
+    const handleImageFilesChange = (e) => {
+        const files = Array.from(e.target.files || [])
+        if (!files.length) return
+
+        if (images.length + files.length > 4) {
+            toast.error('Maximum 4 images allowed per product', { style: toastStyle })
+        }
+
+        const availableSlots = 4 - images.length
+        if (availableSlots <= 0) return
+
+        const filesToAdd = files.slice(0, availableSlots)
+        const newItems = filesToAdd.map(file => ({
+            id: `new-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            url: URL.createObjectURL(file),
+            publicId: '',
+            file: file,
+        }))
+
+        setImages(prev => [...prev, ...newItems])
+        e.target.value = ''
+    }
+
+    const removeImage = (index) => {
+        setImages(prev => prev.filter((_, i) => i !== index))
+    }
+
+    const setAsPrimaryImage = (index) => {
+        if (index === 0) return
+        setImages(prev => {
+            const copy = [...prev]
+            const [selected] = copy.splice(index, 1)
+            copy.unshift(selected)
+            return copy
+        })
+        toast.success('Set as primary main image', { style: toastStyle })
+    }
+
     // Get data for cascading dropdowns from real categories
     const selectedCat = categories.find(c => c._id === form.category)
     const selectedSub = selectedCat?.subcategories.find(s => s.slug === form.subcategory || s._id === form.subcategory)
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0]
-        if (file) {
-            setImageFile(file)
-            setImagePreview(URL.createObjectURL(file))
-        }
-    }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -149,37 +194,42 @@ export default function AddProductPage() {
 
         setIsSubmitting(true)
         try {
-            let imageUrl = imagePreview 
-            let imagePublicId = form.imagePublicId
+            // Upload all new image files to Cloudinary concurrently
+            const uploadedImages = await Promise.all(
+                images.map(async (img) => {
+                    if (img.file) {
+                        const base64Image = await new Promise((resolve, reject) => {
+                            const reader = new FileReader()
+                            reader.readAsDataURL(img.file)
+                            reader.onload = () => resolve(reader.result)
+                            reader.onerror = error => reject(error)
+                        })
 
-            // 1. Upload image if present (and changed)
-            if (imageFile) {
-                const base64Image = await new Promise((resolve, reject) => {
-                    const reader = new FileReader()
-                    reader.readAsDataURL(imageFile)
-                    reader.onload = () => resolve(reader.result)
-                    reader.onerror = error => reject(error)
+                        const uploadRes = await fetch('/api/upload', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                image: base64Image,
+                                folder: 'hope-pharmacy/products'
+                            })
+                        })
+
+                        const uploadData = await uploadRes.json()
+                        if (!uploadRes.ok) throw new Error(uploadData.error || 'Image upload failed')
+
+                        return { url: uploadData.url, publicId: uploadData.publicId }
+                    } else {
+                        return { url: img.url, publicId: img.publicId }
+                    }
                 })
-
-                const uploadRes = await fetch('/api/upload', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image: base64Image,
-                        folder: 'hope-pharmacy/products'
-                    })
-                })
-
-                const uploadData = await uploadRes.json()
-                if (!uploadRes.ok) throw new Error(uploadData.error || 'Image upload failed')
-                
-                imageUrl = uploadData.url
-                imagePublicId = uploadData.publicId
-            }
+            )
 
             // 2. Save/Update product
             const url = editId ? `/api/products/${editId}` : '/api/products'
             const method = editId ? 'PUT' : 'POST'
+
+            const primaryImage = uploadedImages[0]?.url || ''
+            const primaryPublicId = uploadedImages[0]?.publicId || ''
 
             const res = await fetch(url, {
                 method,
@@ -195,8 +245,9 @@ export default function AddProductPage() {
                         price: Number(v.price),
                         stock: Number(v.stock)
                     })),
-                    image: imageUrl,
-                    imagePublicId: imagePublicId,
+                    images: uploadedImages,
+                    image: primaryImage,
+                    imagePublicId: primaryPublicId,
                     requiresPrescription: form.requiresPrescription
                 })
             })
@@ -509,36 +560,81 @@ export default function AddProductPage() {
                         )}
                     </div>
 
-                    {/* Image Upload Placeholder */}
+                    {/* Image Upload Manager (Max 4 images) */}
                     <div>
-                        <label className="block text-sm font-semibold text-secondary mb-1.5">Product Image</label>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-sm font-semibold text-secondary">
+                                Product Images ({images.length}/4)
+                            </label>
+                            <span className="text-[11px] text-text-secondary">
+                                First image will be the primary main image
+                            </span>
+                        </div>
+
                         <input
                             type="file"
-                            id="image-upload"
+                            id="images-upload"
                             className="hidden"
                             accept="image/*"
-                            onChange={handleImageChange}
+                            multiple
+                            disabled={images.length >= 4}
+                            onChange={handleImageFilesChange}
                         />
-                        <label
-                            htmlFor="image-upload"
-                            className="block border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary transition-colors cursor-pointer overflow-hidden max-h-[200px]"
-                        >
-                            {imagePreview ? (
-                                <Image
-                                    src={imagePreview}
-                                    alt="Preview"
-                                    width={160}
-                                    height={160}
-                                    className="max-h-[160px] mx-auto rounded-lg object-contain w-auto h-auto"
-                                />
-                            ) : (
-                                <>
-                                    <Upload className="w-8 h-8 mx-auto mb-2 text-text-secondary" />
-                                    <p className="text-xs text-text-secondary">Click to upload image</p>
-                                    <p className="text-[10px] text-gray-400 mt-1">PNG, JPG up to 2MB</p>
-                                </>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {images.map((img, index) => (
+                                <div
+                                    key={img.id || index}
+                                    className={`relative group rounded-xl border p-2 flex flex-col items-center justify-center bg-gray-50 aspect-square overflow-hidden transition-all ${
+                                        index === 0 ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border'
+                                    }`}
+                                >
+                                    <Image
+                                        src={img.url}
+                                        alt={`Product Image ${index + 1}`}
+                                        fill
+                                        className="object-contain p-1"
+                                    />
+
+                                    {/* Primary Badge */}
+                                    {index === 0 ? (
+                                        <span className="absolute top-1.5 left-1.5 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
+                                            <Star className="w-2.5 h-2.5 fill-current" /> Main
+                                        </span>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => setAsPrimaryImage(index)}
+                                            className="absolute top-1.5 left-1.5 bg-black/60 hover:bg-primary text-white text-[9px] font-medium px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                        >
+                                            Set Main
+                                        </button>
+                                    )}
+
+                                    {/* Delete button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeImage(index)}
+                                        className="absolute top-1.5 right-1.5 bg-red-500/90 hover:bg-red-600 text-white p-1 rounded-full opacity-90 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm"
+                                        title="Remove Image"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+
+                            {/* Add Image Card */}
+                            {images.length < 4 && (
+                                <label
+                                    htmlFor="images-upload"
+                                    className="border-2 border-dashed border-border rounded-xl p-3 flex flex-col items-center justify-center text-center hover:border-primary hover:bg-primary/5 transition-all cursor-pointer aspect-square"
+                                >
+                                    <Upload className="w-6 h-6 mb-1 text-text-secondary" />
+                                    <p className="text-xs font-semibold text-secondary">Add Image</p>
+                                    <p className="text-[10px] text-gray-400 mt-0.5">Max 4 images</p>
+                                </label>
                             )}
-                        </label>
+                        </div>
                     </div>
                 </div>
 

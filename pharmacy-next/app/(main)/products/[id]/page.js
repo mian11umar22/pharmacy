@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ShoppingCart, Minus, Plus, ChevronRight, ArrowLeft, Package, Check, Loader2, AlertCircle } from 'lucide-react'
+import { ShoppingCart, Minus, Plus, ChevronRight, ChevronLeft, ArrowLeft, Package, Check, Loader2, AlertCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import ProductCard from '@/components/ui/ProductCard'
 import PrescriptionUploadModal from '@/components/ui/PrescriptionUploadModal'
@@ -22,6 +22,7 @@ export default function ProductDetailPage({ params: paramsPromise }) {
     const [error, setError] = useState(null)
     const [quantity, setQuantity] = useState(1)
     const [selectedSize, setSelectedSize] = useState('')
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0)
     const [added, setAdded] = useState(false)
     const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
     const [pendingAction, setPendingAction] = useState(null) // 'cart' | 'buy'
@@ -190,6 +191,12 @@ export default function ProductDetailPage({ params: paramsPromise }) {
     const categoryName = product.category?.name || 'Category'
     const categorySlug = product.category?.slug || ''
 
+    const galleryImages = (product.images && product.images.length > 0)
+        ? product.images.map(img => typeof img === 'string' ? img : img.url).filter(Boolean)
+        : (product.image ? [product.image] : [])
+
+    const activeImage = galleryImages[selectedImageIndex] || product.image
+
     return (
         <div className="bg-background min-h-screen">
 
@@ -225,25 +232,82 @@ export default function ProductDetailPage({ params: paramsPromise }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
                 <div className="flex flex-col md:flex-row gap-6 md:gap-12">
 
-                    {/* Product Image */}
+                    {/* Product Image Gallery (Daraz Style) */}
                     <div className="w-full md:w-1/2 lg:w-5/12">
-                        <div className="relative bg-white rounded-2xl overflow-hidden border border-border p-4 md:p-8 aspect-square flex items-center justify-center shadow-sm">
-                            {(product.discount > 0) && (
-                                <span className="absolute top-4 left-4 bg-accent text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-sm z-10">
+                        {/* Main Display Box */}
+                        <div className="relative bg-white rounded-2xl overflow-hidden border border-border p-4 md:p-8 aspect-square flex items-center justify-center shadow-sm group">
+                            {product.discount > 0 && (
+                                <span className="absolute top-4 left-4 bg-accent text-white text-xs md:text-sm font-bold px-3 py-1.5 rounded-full shadow-sm z-10">
                                     {product.discount}% OFF
                                 </span>
                             )}
-                            {product.image ? (
+
+                            {galleryImages.length > 1 && (
+                                <span className="absolute top-4 right-4 bg-black/60 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm z-10">
+                                    {selectedImageIndex + 1}/{galleryImages.length}
+                                </span>
+                            )}
+
+                            {activeImage ? (
                                 <Image
-                                    src={product.image}
+                                    src={activeImage}
                                     alt={product.name}
                                     fill
-                                    className="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
+                                    className="w-full h-full object-contain hover:scale-105 transition-all duration-300"
+                                    priority
                                 />
                             ) : (
                                 <div className="text-8xl">💊</div>
                             )}
+
+                            {/* Chevron Next / Prev Controls */}
+                            {galleryImages.length > 1 && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedImageIndex(prev => (prev > 0 ? prev - 1 : galleryImages.length - 1))}
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-secondary p-2 rounded-full shadow-md backdrop-blur-sm opacity-80 hover:opacity-100 transition-all cursor-pointer z-10"
+                                        aria-label="Previous Image"
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedImageIndex(prev => (prev < galleryImages.length - 1 ? prev + 1 : 0))}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-secondary p-2 rounded-full shadow-md backdrop-blur-sm opacity-80 hover:opacity-100 transition-all cursor-pointer z-10"
+                                        aria-label="Next Image"
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                </>
+                            )}
                         </div>
+
+                        {/* Thumbnails Row (Click/Hover to switch - Daraz Style) */}
+                        {galleryImages.length > 1 && (
+                            <div className="flex items-center gap-3 mt-4 overflow-x-auto pb-2 scrollbar-thin">
+                                {galleryImages.map((imgUrl, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => setSelectedImageIndex(idx)}
+                                        onMouseEnter={() => setSelectedImageIndex(idx)}
+                                        className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 bg-white p-1 flex-shrink-0 cursor-pointer transition-all ${
+                                            selectedImageIndex === idx
+                                                ? 'border-primary ring-2 ring-primary/20 scale-105 shadow-sm'
+                                                : 'border-border opacity-70 hover:opacity-100 hover:border-primary/50'
+                                        }`}
+                                    >
+                                        <Image
+                                            src={imgUrl}
+                                            alt={`Thumbnail ${idx + 1}`}
+                                            fill
+                                            className="object-contain p-1"
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Product Info */}
